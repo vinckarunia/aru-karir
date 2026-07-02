@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'hris' => [
+        'url' => env('HRIS_API_URL', 'http://localhost:8000'),
+        'key' => env('HRIS_API_KEY'),
+        'mock_mode' => env('HRIS_MOCK_MODE', true),
+    ],
+
 ];

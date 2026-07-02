@@ -113,9 +113,17 @@ class JobListingController extends Controller
     public function create(): Response
     {
         $categories = JobCategory::orderBy('name')->get();
+        
+        $hrisProjects = [];
+        try {
+            $hrisProjects = app(\App\Services\HrisApiService::class)->getActiveProjects();
+        } catch (\Exception $e) {
+            \Log::error("Failed to fetch HRIS projects for creation form: " . $e->getMessage());
+        }
 
         return Inertia::render('Hr/JobListing/Create', [
             'categories' => $categories,
+            'hrisProjects' => $hrisProjects,
         ]);
     }
 
@@ -167,9 +175,17 @@ class JobListingController extends Controller
         $job = JobListing::with('categories')->findOrFail($id);
         $categories = JobCategory::orderBy('name')->get();
 
+        $hrisProjects = [];
+        try {
+            $hrisProjects = app(\App\Services\HrisApiService::class)->getActiveProjects();
+        } catch (\Exception $e) {
+            \Log::error("Failed to fetch HRIS projects for edit form: " . $e->getMessage());
+        }
+
         return Inertia::render('Hr/JobListing/Edit', [
             'job' => $job,
             'categories' => $categories,
+            'hrisProjects' => $hrisProjects,
         ]);
     }
 

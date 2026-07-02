@@ -62,7 +62,9 @@ class PipelineController extends Controller
             return back()->with('error', 'Tahapan tidak valid.');
         }
 
-        DB::transaction(function () use ($application, $stages, $currentIndex, $request) {
+        $isTransitionedToPassed = false;
+
+        DB::transaction(function () use ($application, $stages, $currentIndex, $request, &$isTransitionedToPassed) {
             // Update current stage record
             ApplicationStage::where('application_id', $application->id)
                 ->where('stage_name', $application->current_stage)
@@ -93,8 +95,21 @@ class PipelineController extends Controller
                 $application->update([
                     'current_status' => 'passed',
                 ]);
+                $isTransitionedToPassed = true;
             }
         });
+
+        if ($isTransitionedToPassed) {
+            // Reload relationships needed for payload
+            $application->load(['candidate.fieldValues.profileField', 'jobListing']);
+            $apiService = app(\App\Services\HrisApiService::class);
+            $synced = $apiService->createDataRequest($application);
+            if ($synced) {
+                return back()->with('success', 'Berhasil meloloskan kandidat dan sinkronisasi data onboarding ke HRIS berhasil.');
+            } else {
+                return back()->with('warning', 'Berhasil meloloskan kandidat, namun sinkronisasi data onboarding ke HRIS gagal. Silakan periksa log sistem.');
+            }
+        }
 
         return back()->with('success', 'Berhasil melanjutkan kandidat ke tahapan berikutnya.');
     }
@@ -218,7 +233,9 @@ class PipelineController extends Controller
 
         $stages = ['apply', 'screening', 'interview_hr', 'interview_client', 'offering', 'onboarding'];
 
-        DB::transaction(function () use ($ids, $action, $stages, $rejectionReason, $notes) {
+        $passedApplicationIds = [];
+
+        DB::transaction(function () use ($ids, $action, $stages, $rejectionReason, $notes, &$passedApplicationIds) {
             foreach ($ids as $id) {
                 $application = Application::findOrFail($id);
 
@@ -255,6 +272,7 @@ class PipelineController extends Controller
                         $application->update([
                             'current_status' => 'passed',
                         ]);
+                        $passedApplicationIds[] = $application->id;
                     }
                 } elseif ($action === 'reject') {
                     $application->update([
@@ -274,6 +292,30 @@ class PipelineController extends Controller
                 }
             }
         });
+
+        // Trigger HRIS Sync for onboarding candidates that successfully transitioned to 'passed' status
+        $syncErrors = 0;
+        if (!empty($passedApplicationIds)) {
+            $apiService = app(\App\Services\HrisApiService::class);
+            foreach ($passedApplicationIds as $appId) {
+                $app = Application::with(['candidate.fieldValues.profileField', 'jobListing'])->find($appId);
+                if ($app) {
+                    $synced = $apiService->createDataRequest($app);
+                    if (!$synced) {
+                        $syncErrors++;
+                    }
+                }
+            }
+        }
+
+        if ($syncErrors > 0) {
+            $successfulSyncs = count($passedApplicationIds) - $syncErrors;
+            return back()->with('warning', "Aksi massal berhasil diproses untuk " . count($ids) . " kandidat. Namun, {$syncErrors} sinkronisasi data onboarding ke HRIS gagal (Berhasil: {$successfulSyncs}). Silakan periksa log sistem.");
+        }
+
+        if (!empty($passedApplicationIds)) {
+            return back()->with('success', "Aksi massal berhasil diproses untuk " . count($ids) . " kandidat dan " . count($passedApplicationIds) . " data onboarding berhasil disinkronkan ke HRIS.");
+        }
 
         return back()->with('success', 'Aksi massal berhasil diproses untuk ' . count($ids) . ' kandidat.');
     }
