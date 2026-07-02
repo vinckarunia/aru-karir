@@ -87,47 +87,42 @@ class HrisApiService
             'mother_name' => $candidate->mother_name,
         ];
 
-        $hrisWorkerKeys = [
-            'kk_number',
-            'birth_place',
-            'religion',
-            'tax_status',
-            'npwp',
-            'bpjs_kesehatan',
-            'bpjs_ketenagakerjaan',
-            'bank_name',
-            'bank_account_number',
-        ];
-
         $documents = [];
         $fieldValues = $candidate->fieldValues ?? $candidate->field_values ?? [];
         foreach ($fieldValues as $fv) {
             $field = $fv->profileField ?? $fv->profile_field;
             if (!$field) continue;
 
+            $cleanFieldName = strtolower(str_replace([' ', '-'], '_', $field->field_name));
+
             if ($field->field_type === 'file' && $fv->file_path) {
-                // Map documents (KTP or KK)
-                $lowerName = strtolower($field->field_name);
+                // Map documents (KTP, KK, or any other file fields)
                 $docType = null;
-                if (str_contains($lowerName, 'kk') || str_contains($lowerName, 'keluarga')) {
+                if (str_contains($cleanFieldName, 'kk') || str_contains($cleanFieldName, 'keluarga')) {
                     $docType = 'KK';
-                } else if (str_contains($lowerName, 'ktp')) {
+                } else if (str_contains($cleanFieldName, 'ktp')) {
                     $docType = 'KTP';
+                } else {
+                    // Fallback to uppercase field name for other files
+                    $docType = strtoupper($cleanFieldName);
                 }
                 
-                if ($docType) {
-                    $documents[] = [
-                        'type' => $docType,
-                        'file_path' => $fv->file_path,
-                    ];
-                }
-            } else {
-                // Check if it's one of the native HRIS worker table columns
-                $cleanFieldName = strtolower(str_replace([' ', '-'], '_', $field->field_name));
-                if (in_array($cleanFieldName, $hrisWorkerKeys)) {
+                $documents[] = [
+                    'type' => $docType,
+                    'file_path' => $fv->file_path,
+                ];
+
+                // Also throw the file path as the value for the specific custom field key
+                if (!in_array($cleanFieldName, $requestedFields)) {
                     $requestedFields[] = $cleanFieldName;
-                    $requestedData[$cleanFieldName] = $fv->value;
                 }
+                $requestedData[$cleanFieldName] = $fv->file_path;
+            } else {
+                // Throw all other non-file custom fields directly
+                if (!in_array($cleanFieldName, $requestedFields)) {
+                    $requestedFields[] = $cleanFieldName;
+                }
+                $requestedData[$cleanFieldName] = $fv->value;
             }
         }
 

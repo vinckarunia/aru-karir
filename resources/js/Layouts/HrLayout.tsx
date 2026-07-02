@@ -46,6 +46,21 @@ export default function HrLayout({ title, header, children }: PropsWithChildren<
         localStorage.setItem('sidebarCollapsed', String(newState));
     };
 
+    // Manage expanded/collapsed state for sidebar menus, mirroring HRIS
+    const [collapsedMenus, setCollapsedMenus] = useState<Record<string, boolean>>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('hrCollapsedMenus');
+            return saved ? JSON.parse(saved) : {};
+        }
+        return {};
+    });
+
+    const toggleMenu = (menuKey: string) => {
+        const newCollapsedMenus = { ...collapsedMenus, [menuKey]: !collapsedMenus[menuKey] };
+        setCollapsedMenus(newCollapsedMenus);
+        localStorage.setItem('hrCollapsedMenus', JSON.stringify(newCollapsedMenus));
+    };
+
     const getInitials = (name: string): string => {
         const names = name.split(' ');
         if (names.length >= 2) return (names[0][0] + names[1][0]).toUpperCase();
@@ -100,11 +115,22 @@ export default function HrLayout({ title, header, children }: PropsWithChildren<
                 <nav className="flex-1 overflow-y-auto py-6 space-y-8 px-4 overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     {/* Rekrutmen Section */}
                     <div>
-                        <div className={`mb-2 flex items-center text-slate-400 ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`}>
-                            <iconify-icon icon="solar:clipboard-list-linear" width="18" className="shrink-0"></iconify-icon>
-                            <span className={`text-xs font-bold uppercase tracking-wider ml-2 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>Rekrutmen</span>
+                        <div
+                            onClick={() => toggleMenu('rekrutmen')}
+                            className={`mb-2 flex items-center justify-between text-slate-400 cursor-pointer hover:text-slate-600 dark:hover:text-slate-300 transition-all duration-300 ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`}
+                            title="Rekrutmen"
+                        >
+                            <div className="flex items-center gap-2">
+                                <iconify-icon icon="solar:clipboard-list-linear" width="18" className={`shrink-0 transition-opacity duration-300 ${collapsedMenus['rekrutmen'] && isSidebarCollapsed ? 'opacity-50' : 'opacity-100'}`}></iconify-icon>
+                                <span className={`text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>Rekrutmen</span>
+                            </div>
+                            <iconify-icon
+                                icon="solar:alt-arrow-down-linear"
+                                width="14"
+                                className={`transition-transform duration-300 ${collapsedMenus['rekrutmen'] ? '-rotate-90' : ''} ${isSidebarCollapsed ? 'hidden' : 'block'}`}
+                            ></iconify-icon>
                         </div>
-                        <div className="space-y-1">
+                        <div className={`space-y-1 overflow-hidden transition-all duration-300 ${collapsedMenus['rekrutmen'] ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'}`}>
                             {navLinks.map((link) => (
                                 <Link key={link.href} href={link.href} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title={link.label}>
                                     <iconify-icon icon={link.icon} width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>
@@ -115,13 +141,24 @@ export default function HrLayout({ title, header, children }: PropsWithChildren<
                     </div>
 
                     {/* Admin Section */}
-                    {user.is_admin && (
+                    {(user.role === 'admin' || user.is_admin) && (
                         <div>
-                            <div className={`mb-2 flex items-center text-slate-400 ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`}>
-                                <iconify-icon icon="solar:shield-keyhole-minimalistic-linear" width="18" className="shrink-0"></iconify-icon>
-                                <span className={`text-xs font-bold uppercase tracking-wider ml-2 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>Admin</span>
+                            <div
+                                onClick={() => toggleMenu('admin')}
+                                className={`mb-2 flex items-center justify-between text-slate-400 cursor-pointer hover:text-slate-600 dark:hover:text-slate-300 transition-all duration-300 ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`}
+                                title="Admin"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <iconify-icon icon="solar:shield-keyhole-minimalistic-linear" width="18" className={`shrink-0 transition-opacity duration-300 ${collapsedMenus['admin'] && isSidebarCollapsed ? 'opacity-50' : 'opacity-100'}`}></iconify-icon>
+                                    <span className={`text-xs font-bold uppercase tracking-wider transition-all duration-300 ${isSidebarCollapsed ? 'lg:hidden' : 'inline'}`}>Admin</span>
+                                </div>
+                                <iconify-icon
+                                    icon="solar:alt-arrow-down-linear"
+                                    width="14"
+                                    className={`transition-transform duration-300 ${collapsedMenus['admin'] ? '-rotate-90' : ''} ${isSidebarCollapsed ? 'hidden' : 'block'}`}
+                                ></iconify-icon>
                             </div>
-                            <div className="space-y-1">
+                            <div className={`space-y-1 overflow-hidden transition-all duration-300 ${collapsedMenus['admin'] ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'}`}>
                                 {adminLinks.map((link) => (
                                     <Link key={link.href} href={link.href} className={`flex items-center gap-3 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:shadow-sm hover:text-primary dark:hover:bg-slate-800 transition-all group ${isSidebarCollapsed ? 'lg:justify-center px-0' : 'px-4'}`} title={link.label}>
                                         <iconify-icon icon={link.icon} width="20" className="shrink-0 group-hover:text-primary transition-colors"></iconify-icon>

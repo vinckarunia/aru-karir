@@ -68,6 +68,7 @@ Route::prefix('kandidat')->middleware('auth.candidate')->group(function () {
 Route::prefix('hr')->group(function () {
     Route::middleware('guest:hr')->group(function () {
         Route::get('/login', [HrAuthController::class, 'showLogin'])->name('hr.login');
+        Route::redirect('/', '/hr/login');
         Route::post('/login', [HrAuthController::class, 'login']);
     });
 });
@@ -100,22 +101,24 @@ Route::prefix('hr')->middleware('auth.hr')->group(function () {
     Route::post('/logout', [HrAuthController::class, 'logout'])->name('hr.logout');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Admin Routes (HR guard + admin role)
-|--------------------------------------------------------------------------
-*/
+use App\Http\Controllers\Hr\Admin\HrUserController;
+use App\Http\Controllers\Hr\Admin\JobCategoryController;
+use App\Http\Controllers\Hr\Admin\ProfileFieldController;
 
 Route::prefix('hr/admin')->middleware('auth.hr:admin')->group(function () {
-    Route::get('/users', function () {
-        return Inertia::render('Hr/Admin/Users/Index');
-    })->name('admin.users.index');
+    Route::get('/users', [HrUserController::class, 'index'])->name('admin.users.index');
+    Route::post('/users', [HrUserController::class, 'store'])->name('admin.users.store');
+    Route::put('/users/{id}', [HrUserController::class, 'update'])->name('admin.users.update');
+    Route::delete('/users/{id}', [HrUserController::class, 'destroy'])->name('admin.users.destroy');
 
-    Route::get('/categories', function () {
-        return Inertia::render('Hr/Admin/Categories/Index');
-    })->name('admin.categories.index');
+    Route::get('/categories', [JobCategoryController::class, 'index'])->name('admin.categories.index');
+    Route::post('/categories', [JobCategoryController::class, 'store'])->name('admin.categories.store');
+    Route::put('/categories/{id}', [JobCategoryController::class, 'update'])->name('admin.categories.update');
+    Route::delete('/categories/{id}', [JobCategoryController::class, 'destroy'])->name('admin.categories.destroy');
 
-    Route::get('/config', function () {
-        return Inertia::render('Hr/Admin/Config/Index');
-    })->name('admin.config.index');
+    Route::get('/config', [ProfileFieldController::class, 'index'])->name('admin.config.index');
+    Route::post('/config', [ProfileFieldController::class, 'store'])->name('admin.config.store');
+    Route::put('/config/{id}', [ProfileFieldController::class, 'update'])->name('admin.config.update');
+    Route::delete('/config/{id}', [ProfileFieldController::class, 'destroy'])->name('admin.config.destroy');
+    Route::post('/config/reorder', [ProfileFieldController::class, 'reorder'])->name('admin.config.reorder');
 });

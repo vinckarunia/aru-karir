@@ -13,6 +13,10 @@ class HrUser extends Authenticatable
 
     protected $guard = 'hr';
 
+    protected $appends = [
+        'is_admin',
+    ];
+
     protected $fillable = [
         'name',
         'email',
