@@ -81,6 +81,12 @@ class ApplicationController extends Controller
             ]);
         });
 
+        // 5. Dispatch notifications after transaction commits
+        $candidate->notify(new \App\Notifications\ApplicationSubmitted($candidate, $jobListing));
+        if ($jobListing->creator) {
+            $jobListing->creator->notify(new \App\Notifications\NewApplicationReceived($candidate, $jobListing));
+        }
+
         return redirect()->route('candidate.applications.index')
             ->with('success', 'Lamaran Anda untuk posisi ' . $jobListing->title . ' berhasil dikirim!');
     }

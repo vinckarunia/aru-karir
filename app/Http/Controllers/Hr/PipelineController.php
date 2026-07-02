@@ -99,15 +99,34 @@ class PipelineController extends Controller
             }
         });
 
+        $candidate = $application->candidate;
+        $jobListing = $application->jobListing;
+
         if ($isTransitionedToPassed) {
             // Reload relationships needed for payload
             $application->load(['candidate.fieldValues.profileField', 'jobListing']);
             $apiService = app(\App\Services\HrisApiService::class);
             $synced = $apiService->createDataRequest($application);
+
+            // Notify HRIS Onboarding HR Team
+            \Illuminate\Support\Facades\Notification::route('mail', config('hris.hr_email', 'admin@aru.co.id'))
+                ->notify(new \App\Notifications\OnboardingTriggered($application->candidate, $application->jobListing));
+
             if ($synced) {
                 return back()->with('success', 'Berhasil meloloskan kandidat dan sinkronisasi data onboarding ke HRIS berhasil.');
             } else {
                 return back()->with('warning', 'Berhasil meloloskan kandidat, namun sinkronisasi data onboarding ke HRIS gagal. Silakan periksa log sistem.');
+            }
+        } else {
+            $nextStage = $application->current_stage;
+            $notes = $request->input('notes');
+
+            if ($nextStage === 'interview_hr' || $nextStage === 'interview_client') {
+                $candidate->notify(new \App\Notifications\InterviewScheduled($candidate, $jobListing, $nextStage, $notes));
+            } elseif ($nextStage === 'offering') {
+                $candidate->notify(new \App\Notifications\OfferingSent($candidate, $jobListing, $notes));
+            } else {
+                $candidate->notify(new \App\Notifications\ApplicationStatusChanged($candidate, $jobListing, $nextStage, 'passed', $notes));
             }
         }
 
@@ -145,6 +164,15 @@ class PipelineController extends Controller
                 ]);
         });
 
+        $application->load(['candidate', 'jobListing']);
+        $application->candidate->notify(new \App\Notifications\ApplicationStatusChanged(
+            $application->candidate,
+            $application->jobListing,
+            $application->current_stage,
+            'failed',
+            $request->input('rejection_reason') . ($request->input('notes') ? "\n" . $request->input('notes') : '')
+        ));
+
         return back()->with('success', 'Kandidat telah ditolak pada tahapan ' . $application->current_stage);
     }
 
@@ -179,6 +207,27 @@ class PipelineController extends Controller
                     'actioned_at' => now(),
                 ]);
         });
+
+        $application->load(['candidate', 'jobListing']);
+        $status = $request->input('status');
+        $notes = $request->input('notes');
+
+        if ($status === 'rescheduled' && ($application->current_stage === 'interview_hr' || $application->current_stage === 'interview_client')) {
+            $application->candidate->notify(new \App\Notifications\InterviewScheduled(
+                $application->candidate,
+                $application->jobListing,
+                $application->current_stage,
+                $notes
+            ));
+        } elseif ($status === 'no_show' || $status === 'withdrawn') {
+            $application->candidate->notify(new \App\Notifications\ApplicationStatusChanged(
+                $application->candidate,
+                $application->jobListing,
+                $application->current_stage,
+                $status,
+                $notes
+            ));
+        }
 
         return back()->with('success', 'Status kandidat berhasil diperbarui.');
     }
@@ -234,8 +283,9 @@ class PipelineController extends Controller
         $stages = ['apply', 'screening', 'interview_hr', 'interview_client', 'offering', 'onboarding'];
 
         $passedApplicationIds = [];
+        $notificationsToSend = [];
 
-        DB::transaction(function () use ($ids, $action, $stages, $rejectionReason, $notes, &$passedApplicationIds) {
+        DB::transaction(function () use ($ids, $action, $stages, $rejectionReason, $notes, &$passedApplicationIds, &$notificationsToSend) {
             foreach ($ids as $id) {
                 $application = Application::findOrFail($id);
 
@@ -268,6 +318,14 @@ class PipelineController extends Controller
                             'status' => 'in_progress',
                             'actioned_at' => now(),
                         ]);
+
+                        $notificationsToSend[] = [
+                            'candidate' => $application->candidate,
+                            'type' => 'advance',
+                            'next_stage' => $nextStage,
+                            'job_listing' => $application->jobListing,
+                            'notes' => $notes,
+                        ];
                     } else {
                         $application->update([
                             'current_status' => 'passed',
@@ -289,9 +347,44 @@ class PipelineController extends Controller
                             'actioned_by' => auth('hr')->id(),
                             'actioned_at' => now(),
                         ]);
+
+                    $notificationsToSend[] = [
+                        'candidate' => $application->candidate,
+                        'type' => 'reject',
+                        'current_stage' => $application->current_stage,
+                        'job_listing' => $application->jobListing,
+                        'rejection_reason' => $rejectionReason,
+                        'notes' => $notes,
+                    ];
                 }
             }
         });
+
+        // Dispatch bulk notifications after transaction commits
+        foreach ($notificationsToSend as $notif) {
+            $candidate = $notif['candidate'];
+            $jobListing = $notif['job_listing'];
+
+            if ($notif['type'] === 'advance') {
+                $nextStage = $notif['next_stage'];
+                $notes = $notif['notes'];
+                if ($nextStage === 'interview_hr' || $nextStage === 'interview_client') {
+                    $candidate->notify(new \App\Notifications\InterviewScheduled($candidate, $jobListing, $nextStage, $notes));
+                } elseif ($nextStage === 'offering') {
+                    $candidate->notify(new \App\Notifications\OfferingSent($candidate, $jobListing, $notes));
+                } else {
+                    $candidate->notify(new \App\Notifications\ApplicationStatusChanged($candidate, $jobListing, $nextStage, 'passed', $notes));
+                }
+            } elseif ($notif['type'] === 'reject') {
+                $candidate->notify(new \App\Notifications\ApplicationStatusChanged(
+                    $candidate,
+                    $jobListing,
+                    $notif['current_stage'],
+                    'failed',
+                    $notif['rejection_reason'] . ($notif['notes'] ? "\n" . $notif['notes'] : '')
+                ));
+            }
+        }
 
         // Trigger HRIS Sync for onboarding candidates that successfully transitioned to 'passed' status
         $syncErrors = 0;
@@ -304,6 +397,10 @@ class PipelineController extends Controller
                     if (!$synced) {
                         $syncErrors++;
                     }
+
+                    // Notify HRIS Onboarding HR Team
+                    \Illuminate\Support\Facades\Notification::route('mail', config('hris.hr_email', 'admin@aru.co.id'))
+                        ->notify(new \App\Notifications\OnboardingTriggered($app->candidate, $app->jobListing));
                 }
             }
         }
