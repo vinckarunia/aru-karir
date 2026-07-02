@@ -1,12 +1,14 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import PublicLayout from '@/Layouts/PublicLayout';
+import CandidateLayout from '@/Layouts/CandidateLayout';
 import { JobListing, PageProps } from '@/types';
 
 interface Props {
     job: JobListing;
+    hasApplied?: boolean;
 }
 
-export default function JobDetail({ job }: Props) {
+export default function JobDetail({ job, hasApplied }: Props) {
     const { auth } = usePage<PageProps>().props;
 
     // Helper to format currency
@@ -30,8 +32,13 @@ export default function JobDetail({ job }: Props) {
         }
     };
 
+    const Layout = auth.candidate ? CandidateLayout : PublicLayout;
+    const layoutProps = {
+        title: auth.candidate ? `${job.title} - Detail Lowongan — ARUKarir` : `${job.title} - Detail Lowongan`
+    };
+
     return (
-        <PublicLayout>
+        <Layout {...layoutProps}>
             <Head title={`${job.title} - Detail Lowongan`} />
 
             <div className="relative py-12">
@@ -90,17 +97,26 @@ export default function JobDetail({ job }: Props) {
                             {/* Large screen apply button */}
                             <div className="w-full md:w-auto shrink-0">
                                 {auth.candidate ? (
-                                    <Link
-                                        href={route('candidate.apply', job.id)}
-                                        method="post"
-                                        as="button"
-                                        className="w-full md:w-auto px-8 py-4 bg-primary text-white text-center font-bold rounded-2xl hover:bg-primary-dark transition-all shadow-md hover:shadow-lg cursor-pointer"
-                                    >
-                                        Lamar Sekarang
-                                    </Link>
+                                    hasApplied ? (
+                                        <button
+                                            disabled
+                                            className="w-full md:w-auto px-8 py-4 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 text-center font-bold rounded-2xl border border-slate-200 dark:border-slate-700 cursor-not-allowed"
+                                        >
+                                            Sudah Dilamar
+                                        </button>
+                                    ) : (
+                                        <Link
+                                            href={route('candidate.apply', job.id)}
+                                            method="post"
+                                            as="button"
+                                            className="w-full md:w-auto px-8 py-4 bg-primary text-white text-center font-bold rounded-2xl hover:bg-primary-dark transition-all shadow-md hover:shadow-lg cursor-pointer"
+                                        >
+                                            Lamar Sekarang
+                                        </Link>
+                                    )
                                 ) : (
                                     <Link
-                                        href={route('candidate.login')}
+                                        href={route('candidate.login', { job: job.slug })}
                                         className="w-full md:w-auto block px-8 py-4 bg-primary text-white text-center font-bold rounded-2xl hover:bg-primary-dark transition-all shadow-md hover:shadow-lg cursor-pointer"
                                     >
                                         Login untuk Melamar
@@ -222,6 +238,6 @@ export default function JobDetail({ job }: Props) {
                     </div>
                 </div>
             </div>
-        </PublicLayout>
+        </Layout>
     );
 }

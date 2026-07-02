@@ -1,9 +1,10 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import PublicLayout from '@/Layouts/PublicLayout';
+import CandidateLayout from '@/Layouts/CandidateLayout';
 import Pagination from '@/Components/Pagination';
 import EmptyState from '@/Components/EmptyState';
-import { JobCategory, JobListing, PaginatedData } from '@/types';
+import { JobCategory, JobListing, PaginatedData, PageProps } from '@/types';
 
 interface Props {
     listings: PaginatedData<JobListing>;
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export default function JobIndex({ listings, categories, locations, filters }: Props) {
+    const { auth } = usePage<PageProps>().props;
     const [search, setSearch] = useState(filters.search || '');
     const [category, setCategory] = useState(filters.category || '');
     const [contractType, setContractType] = useState(filters.contract_type || '');
@@ -75,8 +77,13 @@ export default function JobIndex({ listings, categories, locations, filters }: P
         }
     };
 
+    const Layout = auth.candidate ? CandidateLayout : PublicLayout;
+    const layoutProps = {
+        title: auth.candidate ? "Cari Lowongan — ARUKarir" : "Temukan Karir Impianmu"
+    };
+
     return (
-        <PublicLayout>
+        <Layout {...layoutProps}>
             <Head title="Temukan Karir Impianmu" />
 
             <div className="relative py-16 sm:py-24">
@@ -289,6 +296,6 @@ export default function JobIndex({ listings, categories, locations, filters }: P
                     )}
                 </div>
             </div>
-        </PublicLayout>
+        </Layout>
     );
 }

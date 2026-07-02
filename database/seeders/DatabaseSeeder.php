@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             HrUserSeeder::class,
             JobCategorySeeder::class,
             JobListingSeeder::class,
+            CandidateSeeder::class,
         ]);
     }
 }

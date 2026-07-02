@@ -93,6 +93,16 @@ export default function CandidateLayout({ title, header, children }: PropsWithCh
                             <p className="text-xs text-slate-500 mt-1 font-medium">Kandidat</p>
                         </div>
                     </Link>
+
+                    <Link
+                        href={route('candidate.logout')}
+                        method="post"
+                        as="button"
+                        className="flex p-2 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20 dark:hover:text-red-400 transition-all group shrink-0 cursor-pointer"
+                        title="Keluar"
+                    >
+                        <iconify-icon icon="solar:logout-linear" width="22" className="group-hover:scale-110 transition-transform"></iconify-icon>
+                    </Link>
                 </div>
             </header>
 

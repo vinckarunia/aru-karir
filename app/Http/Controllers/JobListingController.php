@@ -79,8 +79,16 @@ class JobListingController extends Controller
             abort(404);
         }
 
+        $hasApplied = false;
+        if (auth('candidate')->check()) {
+            $hasApplied = \App\Models\Application::where('candidate_id', auth('candidate')->id())
+                ->where('job_listing_id', $job->id)
+                ->exists();
+        }
+
         return Inertia::render('Public/JobDetail', [
             'job' => $job,
+            'hasApplied' => $hasApplied,
         ]);
     }
 

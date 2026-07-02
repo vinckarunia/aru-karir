@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Hr\AuthController as HrAuthController;
+use App\Http\Controllers\Hr\DashboardController;
+use App\Http\Controllers\Hr\PipelineController;
 use App\Http\Controllers\JobListingController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -20,15 +22,23 @@ Route::get('/lowongan/{slug}', [JobListingController::class, 'publicShow'])->nam
 |--------------------------------------------------------------------------
 */
 
+use App\Http\Controllers\Candidate\AuthController as CandidateAuthController;
+use App\Http\Controllers\Candidate\ProfileController as CandidateProfileController;
+use App\Http\Controllers\Candidate\ApplicationController as CandidateApplicationController;
+
 Route::prefix('kandidat')->group(function () {
     Route::middleware('guest:candidate')->group(function () {
-        Route::get('/login', function () {
-            return Inertia::render('Candidate/Auth/Login');
-        })->name('candidate.login');
+        Route::get('/login', [CandidateAuthController::class, 'showLogin'])->name('candidate.login');
+        Route::post('/login', [CandidateAuthController::class, 'login']);
 
-        Route::get('/register', function () {
-            return Inertia::render('Candidate/Auth/Register');
-        })->name('candidate.register');
+        Route::get('/register', [CandidateAuthController::class, 'showRegister'])->name('candidate.register');
+        Route::post('/register', [CandidateAuthController::class, 'register']);
+
+        Route::get('/forgot-password', [CandidateAuthController::class, 'showForgotPassword'])->name('candidate.password.request');
+        Route::post('/forgot-password', [CandidateAuthController::class, 'sendResetLink'])->name('candidate.password.email');
+
+        Route::get('/reset-password/{token}', [CandidateAuthController::class, 'showResetPassword'])->name('candidate.password.reset');
+        Route::post('/reset-password', [CandidateAuthController::class, 'resetPassword'])->name('candidate.password.update');
     });
 });
 
@@ -39,17 +49,14 @@ Route::prefix('kandidat')->group(function () {
 */
 
 Route::prefix('kandidat')->middleware('auth.candidate')->group(function () {
-    Route::get('/profil', function () {
-        return Inertia::render('Candidate/Profile/Edit');
-    })->name('candidate.profile.edit');
+    Route::post('/logout', [CandidateAuthController::class, 'logout'])->name('candidate.logout');
 
-    Route::get('/lamaran', function () {
-        return Inertia::render('Candidate/Application/Index');
-    })->name('candidate.applications.index');
+    Route::get('/profil', [CandidateProfileController::class, 'edit'])->name('candidate.profile.edit');
+    Route::post('/profil', [CandidateProfileController::class, 'update'])->name('candidate.profile.update');
 
-    Route::post('/apply/{id}', function () {
-        return redirect()->back();
-    })->name('candidate.apply');
+    Route::get('/lamaran', [CandidateApplicationController::class, 'index'])->name('candidate.applications.index');
+    Route::post('/apply/{id}', [CandidateApplicationController::class, 'store'])->name('candidate.apply');
+    Route::get('/lamaran/{id}', [CandidateApplicationController::class, 'show'])->name('candidate.applications.show');
 });
 
 /*
@@ -72,9 +79,7 @@ Route::prefix('hr')->group(function () {
 */
 
 Route::prefix('hr')->middleware('auth.hr')->group(function () {
-    Route::get('/dashboard', function () {
-        return Inertia::render('Hr/Dashboard');
-    })->name('hr.dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('hr.dashboard');
 
     Route::get('/lowongan', [JobListingController::class, 'index'])->name('hr.lowongan.index');
     Route::get('/lowongan/create', [JobListingController::class, 'create'])->name('hr.lowongan.create');
@@ -82,9 +87,16 @@ Route::prefix('hr')->middleware('auth.hr')->group(function () {
     Route::get('/lowongan/{id}/edit', [JobListingController::class, 'edit'])->name('hr.lowongan.edit');
     Route::put('/lowongan/{id}', [JobListingController::class, 'update'])->name('hr.lowongan.update');
     Route::patch('/lowongan/{id}/toggle', [JobListingController::class, 'toggleStatus'])->name('hr.lowongan.toggle');
-    Route::get('/pipeline/{id}', function () {
-        return redirect()->back();
-    })->name('hr.pipeline');
+    
+    // Pipeline routes
+    Route::get('/pipeline/{id}', [PipelineController::class, 'index'])->name('hr.pipeline');
+    Route::get('/pipeline/lamaran/{id}', [PipelineController::class, 'show'])->name('hr.pipeline.show');
+    Route::post('/pipeline/lamaran/{id}/advance', [PipelineController::class, 'advanceStage'])->name('hr.pipeline.advance');
+    Route::post('/pipeline/lamaran/{id}/reject', [PipelineController::class, 'rejectStage'])->name('hr.pipeline.reject');
+    Route::post('/pipeline/lamaran/{id}/status', [PipelineController::class, 'updateStatus'])->name('hr.pipeline.status');
+    Route::post('/pipeline/lamaran/{id}/note', [PipelineController::class, 'addNote'])->name('hr.pipeline.note');
+    Route::post('/pipeline/bulk-action', [PipelineController::class, 'bulkAction'])->name('hr.pipeline.bulk');
+    
     Route::post('/logout', [HrAuthController::class, 'logout'])->name('hr.logout');
 });
 

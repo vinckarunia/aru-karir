@@ -15,6 +15,8 @@ export interface Candidate {
     profile_photo_path?: string;
     profile_completed_at?: string;
     is_profile_complete: boolean;
+    field_values?: any[];
+    fieldValues?: any[];
     created_at: string;
     updated_at: string;
 }
