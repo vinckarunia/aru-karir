@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             HrUserSeeder::class,
             JobCategorySeeder::class,
+            JobListingSeeder::class,
         ]);
     }
 }
