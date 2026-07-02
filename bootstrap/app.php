@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Middleware\AuthenticateCandidate;
+use App\Http\Middleware\AuthenticateHr;
+use App\Http\Middleware\EnsureCandidateProfileComplete;
+use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,7 +16,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->web(append: [
+            HandleInertiaRequests::class,
+        ]);
+
+        $middleware->alias([
+            'auth.candidate' => AuthenticateCandidate::class,
+            'auth.hr' => AuthenticateHr::class,
+            'profile.complete' => EnsureCandidateProfileComplete::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
