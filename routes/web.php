@@ -4,6 +4,7 @@ use App\Http\Controllers\Hr\AuthController as HrAuthController;
 use App\Http\Controllers\Hr\DashboardController;
 use App\Http\Controllers\Hr\PipelineController;
 use App\Http\Controllers\JobListingController;
+use App\Http\Controllers\SitemapController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -15,6 +16,8 @@ use Inertia\Inertia;
 
 Route::get('/', [JobListingController::class, 'publicIndex'])->name('home');
 Route::get('/lowongan/{slug}', [JobListingController::class, 'publicShow'])->name('job.detail');
+Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('sitemap');
+Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
 
 /*
 |--------------------------------------------------------------------------
