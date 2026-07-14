@@ -72,20 +72,159 @@ class HrisApiService
             'address_ktp',
             'address_domicile',
             'mother_name',
+            'birth_place',
+            'religion',
+            'blood_type',
+            'height',
+            'weight',
+            'phone_domicile',
+            'housing_status',
+            'npwp',
+            'bank_name',
+            'bank_account_number',
+            'size_shoe',
+            'size_uniform',
+            'reference_name',
+            'reference_relationship',
+            'reference_phone',
+            'emergency_name',
+            'emergency_relationship',
+            'emergency_phone',
+            'emergency_address',
+            'school_name_city',
+            'school_major',
+            'school_graduation_year',
+            'work_experience',
         ];
 
         $requestedData = [
             'name' => $candidate->name,
             'ktp_number' => $candidate->ktp_number,
-            'birth_date' => $candidate->birth_date,
+            'birth_date' => $candidate->birth_date ? $candidate->birth_date->format('Y-m-d') : null,
             'gender' => $candidate->gender,
             'phone' => $candidate->phone,
             'email' => $candidate->email,
             'education' => $candidate->education_level,
             'address_ktp' => $candidate->address,
-            'address_domicile' => $candidate->address,
+            'address_domicile' => $candidate->address_domicile ?: $candidate->address,
             'mother_name' => $candidate->mother_name,
+            'birth_place' => $candidate->birth_place,
+            'religion' => $candidate->religion,
+            'blood_type' => $candidate->blood_type,
+            'height' => $candidate->height,
+            'weight' => $candidate->weight,
+            'phone_domicile' => $candidate->phone_domicile,
+            'housing_status' => $candidate->housing_status,
+            'npwp' => $candidate->npwp,
+            'bank_name' => $candidate->bank_name,
+            'bank_account_number' => $candidate->bank_account_number,
+            'size_shoe' => $candidate->size_shoe,
+            'size_uniform' => $candidate->size_uniform,
+            'reference_name' => $candidate->reference_name,
+            'reference_relationship' => $candidate->reference_relationship,
+            'reference_phone' => $candidate->reference_phone,
+            'emergency_name' => $candidate->emergency_name,
+            'emergency_relationship' => $candidate->emergency_relationship,
+            'emergency_phone' => $candidate->emergency_phone,
+            'emergency_address' => $candidate->emergency_address,
+            'school_name_city' => $candidate->school_name_city,
+            'school_major' => $candidate->school_major,
+            'school_graduation_year' => $candidate->school_graduation_year,
+            'work_experience' => $candidate->work_experience,
         ];
+
+        // Format and append family members
+        $familyMembers = [];
+
+        // Helper to parse "Place, YYYY-MM-DD"
+        $parseBirthPlaceDate = function ($value) {
+            if (!$value) return ['place' => null, 'date' => null];
+            if (str_contains($value, ',')) {
+                $parts = explode(',', $value);
+                return [
+                    'place' => trim($parts[0]),
+                    'date' => trim($parts[1]),
+                ];
+            }
+            return ['place' => $value, 'date' => null];
+        };
+
+        if ($candidate->father_name) {
+            $parsed = $parseBirthPlaceDate($candidate->father_birth_place_date);
+            $familyMembers[] = [
+                'relationship_type' => 'parent',
+                'name' => $candidate->father_name,
+                'birth_place' => $parsed['place'],
+                'birth_date' => $parsed['date'],
+                'nik' => null,
+                'bpjs_number' => null,
+            ];
+        }
+
+        if ($candidate->mother_name) {
+            $parsed = $parseBirthPlaceDate($candidate->mother_birth_place_date);
+            $familyMembers[] = [
+                'relationship_type' => 'parent',
+                'name' => $candidate->mother_name,
+                'birth_place' => $parsed['place'],
+                'birth_date' => $parsed['date'],
+                'nik' => null,
+                'bpjs_number' => null,
+            ];
+        }
+
+        if ($candidate->marital_status === 'nikah' && $candidate->spouse_name) {
+            $parsed = $parseBirthPlaceDate($candidate->spouse_birth_place_date);
+            $familyMembers[] = [
+                'relationship_type' => 'spouse',
+                'name' => $candidate->spouse_name,
+                'birth_place' => $parsed['place'],
+                'birth_date' => $parsed['date'],
+                'nik' => null,
+                'bpjs_number' => null,
+            ];
+        }
+
+        if ($candidate->child_1_name) {
+            $parsed = $parseBirthPlaceDate($candidate->child_1_birth_place_date);
+            $familyMembers[] = [
+                'relationship_type' => 'child',
+                'name' => $candidate->child_1_name,
+                'birth_place' => $parsed['place'],
+                'birth_date' => $parsed['date'],
+                'nik' => null,
+                'bpjs_number' => null,
+            ];
+        }
+
+        if ($candidate->child_2_name) {
+            $parsed = $parseBirthPlaceDate($candidate->child_2_birth_place_date);
+            $familyMembers[] = [
+                'relationship_type' => 'child',
+                'name' => $candidate->child_2_name,
+                'birth_place' => $parsed['place'],
+                'birth_date' => $parsed['date'],
+                'nik' => null,
+                'bpjs_number' => null,
+            ];
+        }
+
+        if ($candidate->child_3_name) {
+            $parsed = $parseBirthPlaceDate($candidate->child_3_birth_place_date);
+            $familyMembers[] = [
+                'relationship_type' => 'child',
+                'name' => $candidate->child_3_name,
+                'birth_place' => $parsed['place'],
+                'birth_date' => $parsed['date'],
+                'nik' => null,
+                'bpjs_number' => null,
+            ];
+        }
+
+        if (!empty($familyMembers)) {
+            $requestedFields[] = 'family_members';
+            $requestedData['family_members'] = $familyMembers;
+        }
 
         $documents = [];
         $fieldValues = $candidate->fieldValues ?? $candidate->field_values ?? [];

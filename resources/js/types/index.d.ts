@@ -19,6 +19,48 @@ export interface Candidate {
     fieldValues?: any[];
     created_at: string;
     updated_at: string;
+
+    // New biodata fields
+    birth_place?: string;
+    religion?: string;
+    blood_type?: string;
+    height?: number;
+    weight?: number;
+    address_domicile?: string;
+    phone_domicile?: string;
+    housing_status?: string;
+    npwp?: string;
+    bank_name?: string;
+    bank_account_number?: string;
+    father_name?: string;
+    father_birth_place_date?: string;
+    father_job?: string;
+    mother_birth_place_date?: string;
+    mother_job?: string;
+    sibling_order?: number;
+    sibling_count?: number;
+    marital_status?: 'belum_nikah' | 'nikah' | 'duda' | 'janda';
+    spouse_name?: string;
+    spouse_birth_place_date?: string;
+    child_1_name?: string;
+    child_1_birth_place_date?: string;
+    child_2_name?: string;
+    child_2_birth_place_date?: string;
+    child_3_name?: string;
+    child_3_birth_place_date?: string;
+    school_name_city?: string;
+    school_major?: string;
+    school_graduation_year?: number;
+    work_experience?: any[];
+    reference_name?: string;
+    reference_relationship?: string;
+    reference_phone?: string;
+    emergency_name?: string;
+    emergency_relationship?: string;
+    emergency_phone?: string;
+    emergency_address?: string;
+    size_shoe?: number;
+    size_uniform?: string;
 }
 
 export interface HrUser {
@@ -50,6 +92,7 @@ export interface JobListing {
     creator?: HrUser;
     categories?: JobCategory[];
     applications_count?: number;
+    required_fields?: string[];
     created_at: string;
     updated_at: string;
 }

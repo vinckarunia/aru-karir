@@ -40,18 +40,17 @@ class ApplicationController extends Controller
         /** @var \App\Models\Candidate $candidate */
         $candidate = Auth::guard('candidate')->user();
 
-        // 1. Ensure profile is complete
-        if (!$candidate->is_profile_complete) {
-            $job = JobListing::find($jobId);
-            $slugParam = $job ? ['job' => $job->slug] : [];
-            return redirect()->route('candidate.profile.edit', $slugParam)
-                ->with('warning', 'Silakan lengkapi profil Anda terlebih dahulu untuk mengirim lamaran.');
-        }
-
-        // 2. Ensure job listing exists and is active/published
+        // 1. Ensure job listing exists and is active/published
         $jobListing = JobListing::where('id', $jobId)
             ->where('status', 'published')
             ->firstOrFail();
+
+        // 2. Ensure profile is complete and satisfies required fields for this job
+        if (!$candidate->is_profile_complete || !$candidate->satisfiesRequiredFields($jobListing)) {
+            $slugParam = ['job' => $jobListing->slug];
+            return redirect()->route('candidate.profile.edit', $slugParam)
+                ->with('warning', 'Silakan lengkapi data profil yang wajib diisi terlebih dahulu untuk mengirim lamaran.');
+        }
 
         // 3. Ensure candidate has not already applied to this job
         $existing = Application::where('candidate_id', $candidate->id)

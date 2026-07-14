@@ -160,21 +160,31 @@ export default function PipelineShow({ application }: Props) {
                         </div>
                     </div>
 
-                    {/* Standard Biodata Details */}
+                    {/* 1. Detail Pribadi & Domisili */}
                     <div className="glass rounded-2xl p-6 border border-slate-200/60 dark:border-slate-800/60 shadow-card">
                         <h3 className="text-base font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800/60">
-                            <iconify-icon icon="solar:user-id-bold-duotone" width="20" className="text-primary"></iconify-icon>
-                            Informasi Biodata Standar
+                            <iconify-icon icon="solar:user-bold-duotone" width="20" className="text-primary"></iconify-icon>
+                            Detail Pribadi & Domisili
                         </h3>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                             {[
+                                { label: 'Nama Lengkap', value: candidate.name || '-' },
                                 { label: 'Nomor HP', value: candidate.phone || '-' },
-                                { label: 'NIK KTP', value: candidate.ktp_number || '-' },
-                                { label: 'Nama Ibu Kandung', value: candidate.mother_name || '-' },
-                                { label: 'Jenis Kelamin', value: candidate.gender === 'male' ? 'Laki-laki' : candidate.gender === 'female' ? 'Perempuan' : '-' },
+                                { label: 'Tempat Lahir', value: candidate.birth_place || '-' },
                                 { label: 'Tanggal Lahir', value: candidate.birth_date ? new Date(candidate.birth_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-' },
-                                { label: 'Pendidikan Terakhir', value: candidate.education_level || '-' },
+                                { label: 'Jenis Kelamin', value: candidate.gender === 'male' ? 'Laki-laki' : candidate.gender === 'female' ? 'Perempuan' : '-' },
+                                { label: 'Agama', value: candidate.religion || '-' },
+                                { label: 'Golongan Darah', value: candidate.blood_type || '-' },
+                                { label: 'Tinggi Badan', value: candidate.height ? `${candidate.height} cm` : '-' },
+                                { label: 'Berat Badan', value: candidate.weight ? `${candidate.weight} kg` : '-' },
+                                { label: 'NIK KTP', value: candidate.ktp_number || '-' },
+                                { label: 'Status Tempat Tinggal', value: candidate.housing_status || '-' },
+                                { label: 'No. HP Domisili', value: candidate.phone_domicile || '-' },
+                                { label: 'NPWP', value: candidate.npwp || '-' },
+                                { label: 'Bank / No. Rekening', value: candidate.bank_name ? `${candidate.bank_name} - ${candidate.bank_account_number}` : '-' },
+                                { label: 'Ukuran Sepatu', value: candidate.size_shoe || '-' },
+                                { label: 'Ukuran Seragam', value: candidate.size_uniform || '-' },
                             ].map((item) => (
                                 <div key={item.label}>
                                     <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{item.label}</span>
@@ -182,9 +192,219 @@ export default function PipelineShow({ application }: Props) {
                                 </div>
                             ))}
                             
-                            <div className="sm:col-span-2">
-                                <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Alamat Lengkap</span>
+                            <div className="sm:col-span-2 md:col-span-3">
+                                <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Alamat Sesuai KTP</span>
                                 <span className="text-sm font-medium text-slate-700 dark:text-slate-200 mt-1 block leading-relaxed">{candidate.address || '-'}</span>
+                            </div>
+
+                            <div className="sm:col-span-2 md:col-span-3 border-t border-slate-100 dark:border-slate-800/60 pt-4">
+                                <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Alamat Domisili</span>
+                                <span className="text-sm font-medium text-slate-700 dark:text-slate-200 mt-1 block leading-relaxed">{candidate.address_domicile || '-'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 2. Detail Keluarga */}
+                    <div className="glass rounded-2xl p-6 border border-slate-200/60 dark:border-slate-800/60 shadow-card">
+                        <h3 className="text-base font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800/60">
+                            <iconify-icon icon="solar:users-group-two-rounded-bold-duotone" width="20" className="text-primary"></iconify-icon>
+                            Susunan Keluarga
+                        </h3>
+
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                                <div>
+                                    <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Nama Ayah</span>
+                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-1 block">{candidate.father_name || '-'}</span>
+                                </div>
+                                <div>
+                                    <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Tempat, Tgl Lahir Ayah</span>
+                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-1 block">{candidate.father_birth_place_date || '-'}</span>
+                                </div>
+                                <div>
+                                    <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Pekerjaan Ayah</span>
+                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-1 block">{candidate.father_job || '-'}</span>
+                                </div>
+
+                                <div>
+                                    <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Nama Ibu Kandung</span>
+                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-1 block">{candidate.mother_name || '-'}</span>
+                                </div>
+                                <div>
+                                    <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Tempat, Tgl Lahir Ibu</span>
+                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-1 block">{candidate.mother_birth_place_date || '-'}</span>
+                                </div>
+                                <div>
+                                    <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Pekerjaan Ibu</span>
+                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-1 block">{candidate.mother_job || '-'}</span>
+                                </div>
+
+                                <div>
+                                    <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Kedudukan Sibling</span>
+                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-1 block">
+                                        {candidate.sibling_order && candidate.sibling_count ? `Anak Ke-${candidate.sibling_order} dari ${candidate.sibling_count} bersaudara` : '-'}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Status Pernikahan</span>
+                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-1 block uppercase">
+                                        {candidate.marital_status ? candidate.marital_status.replace('_', ' ') : '-'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {candidate.marital_status === 'nikah' && (
+                                <div className="border-t border-slate-100 dark:border-slate-800/60 pt-4 space-y-4">
+                                    <h4 className="font-bold text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider">Pasangan & Anak</h4>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                                        <div>
+                                            <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Nama Suami / Istri</span>
+                                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-1 block">{candidate.spouse_name || '-'}</span>
+                                        </div>
+                                        <div className="sm:col-span-2">
+                                            <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Tempat, Tgl Lahir Pasangan</span>
+                                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-1 block">{candidate.spouse_birth_place_date || '-'}</span>
+                                        </div>
+
+                                        {candidate.child_1_name && (
+                                            <div>
+                                                <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Anak #1</span>
+                                                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-1 block">{candidate.child_1_name}</span>
+                                                <span className="text-xs text-slate-400 block mt-0.5">{candidate.child_1_birth_place_date}</span>
+                                            </div>
+                                        )}
+
+                                        {candidate.child_2_name && (
+                                            <div>
+                                                <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Anak #2</span>
+                                                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-1 block">{candidate.child_2_name}</span>
+                                                <span className="text-xs text-slate-400 block mt-0.5">{candidate.child_2_birth_place_date}</span>
+                                            </div>
+                                        )}
+
+                                        {candidate.child_3_name && (
+                                            <div>
+                                                <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Anak #3</span>
+                                                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-1 block">{candidate.child_3_name}</span>
+                                                <span className="text-xs text-slate-400 block mt-0.5">{candidate.child_3_birth_place_date}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 3. Pendidikan & Pengalaman Kerja */}
+                    <div className="glass rounded-2xl p-6 border border-slate-200/60 dark:border-slate-800/60 shadow-card space-y-6">
+                        <div>
+                            <h3 className="text-base font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800/60">
+                                <iconify-icon icon="solar:letter-academic-bold-duotone" width="20" className="text-primary"></iconify-icon>
+                                Pendidikan Terakhir
+                            </h3>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                                <div>
+                                    <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Tingkat Pendidikan</span>
+                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-1 block">{candidate.education_level || '-'}</span>
+                                </div>
+                                <div className="sm:col-span-2">
+                                    <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Sekolah / Universitas & Kota</span>
+                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-1 block">{candidate.school_name_city || '-'}</span>
+                                </div>
+                                <div>
+                                    <span className="block text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Jurusan & Kelulusan</span>
+                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-1 block">
+                                        {candidate.school_major ? `${candidate.school_major} (${candidate.school_graduation_year})` : '-'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="border-t border-slate-100 dark:border-slate-800/60 pt-6">
+                            <h3 className="text-sm font-bold text-slate-850 dark:text-slate-200 mb-4 flex items-center gap-2">
+                                <iconify-icon icon="solar:case-round-bold-duotone" width="18" className="text-primary"></iconify-icon>
+                                Riwayat Pekerjaan
+                            </h3>
+
+                            {!candidate.work_experience || candidate.work_experience.length === 0 ? (
+                                <div className="text-xs text-slate-450 dark:text-slate-550 italic bg-slate-50/50 dark:bg-dark-surface/10 p-4 rounded-xl border border-slate-100 dark:border-slate-850 text-center">
+                                    Tidak ada riwayat pekerjaan yang dicantumkan.
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {candidate.work_experience.map((exp: any, idx: number) => (
+                                        <div key={idx} className="p-4 rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-slate-50/30 dark:bg-dark-surface/10 space-y-3">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">{exp.position}</h4>
+                                                    <p className="text-xs text-slate-500 font-semibold">{exp.company}</p>
+                                                </div>
+                                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-primary/10 text-primary uppercase shrink-0">
+                                                    {exp.period}
+                                                </span>
+                                            </div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-100 dark:border-slate-850">
+                                                <p className="text-slate-500">
+                                                    Gaji Terakhir: <strong className="text-slate-600 dark:text-slate-350">{exp.last_salary ? `Rp ${Number(exp.last_salary).toLocaleString('id-ID')}` : '-'}</strong>
+                                                </p>
+                                                <p className="text-slate-500">
+                                                    Alasan Keluar: <span className="text-slate-600 dark:text-slate-350">{exp.resign_reason || '-'}</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 4. Referensi & Kontak Darurat */}
+                    <div className="glass rounded-2xl p-6 border border-slate-200/60 dark:border-slate-800/60 shadow-card">
+                        <h3 className="text-base font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800/60">
+                            <iconify-icon icon="solar:phone-calling-bold-duotone" width="20" className="text-primary"></iconify-icon>
+                            Referensi & Kontak Darurat
+                        </h3>
+
+                        <div className="space-y-6">
+                            <div>
+                                <h4 className="font-bold text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Referensi Kerja</h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/40 dark:bg-dark-surface/10 p-4 rounded-xl border border-slate-100 dark:border-slate-850">
+                                    <div>
+                                        <span className="block text-[10px] font-bold text-slate-400 uppercase">Nama</span>
+                                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-250 block mt-0.5">{candidate.reference_name || '-'}</span>
+                                    </div>
+                                    <div>
+                                        <span className="block text-[10px] font-bold text-slate-400 uppercase">Hubungan</span>
+                                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-250 block mt-0.5">{candidate.reference_relationship || '-'}</span>
+                                    </div>
+                                    <div>
+                                        <span className="block text-[10px] font-bold text-slate-400 uppercase">No. HP</span>
+                                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-250 block mt-0.5">{candidate.reference_phone || '-'}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="border-t border-slate-100 dark:border-slate-800/60 pt-4">
+                                <h4 className="font-bold text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Hubungan Kontak Darurat</h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/40 dark:bg-dark-surface/10 p-4 rounded-xl border border-slate-100 dark:border-slate-850">
+                                    <div>
+                                        <span className="block text-[10px] font-bold text-slate-400 uppercase">Nama</span>
+                                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-250 block mt-0.5">{candidate.emergency_name || '-'}</span>
+                                    </div>
+                                    <div>
+                                        <span className="block text-[10px] font-bold text-slate-400 uppercase">Hubungan</span>
+                                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-250 block mt-0.5">{candidate.emergency_relationship || '-'}</span>
+                                    </div>
+                                    <div>
+                                        <span className="block text-[10px] font-bold text-slate-400 uppercase">No. HP</span>
+                                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-250 block mt-0.5">{candidate.emergency_phone || '-'}</span>
+                                    </div>
+                                    <div className="sm:col-span-3 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                                        <span className="block text-[10px] font-bold text-slate-400 uppercase">Alamat</span>
+                                        <span className="text-xs font-medium text-slate-650 dark:text-slate-300 block mt-1 leading-relaxed">{candidate.emergency_address || '-'}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

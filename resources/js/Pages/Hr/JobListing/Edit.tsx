@@ -19,6 +19,35 @@ interface Props {
     hrisProjects?: HrisProject[];
 }
 
+const optionalBiodataFields = [
+    { key: 'blood_type', label: 'Golongan Darah' },
+    { key: 'height', label: 'Tinggi Badan' },
+    { key: 'weight', label: 'Berat Badan' },
+    { key: 'address_domicile', label: 'Alamat Domisili' },
+    { key: 'phone_domicile', label: 'Telepon Domisili' },
+    { key: 'housing_status', label: 'Status Kepemilikan Rumah' },
+    { key: 'npwp', label: 'NPWP' },
+    { key: 'bank_name', label: 'Nama Bank' },
+    { key: 'bank_account_number', label: 'Nomor Rekening Bank' },
+    { key: 'size_shoe', label: 'Ukuran Sepatu' },
+    { key: 'size_uniform', label: 'Ukuran Seragam' },
+    { key: 'father_name', label: 'Nama Ayah' },
+    { key: 'father_birth_place_date', label: 'Tempat & Tanggal Lahir Ayah' },
+    { key: 'father_job', label: 'Pekerjaan Ayah' },
+    { key: 'mother_birth_place_date', label: 'Tempat & Tanggal Lahir Ibu' },
+    { key: 'mother_job', label: 'Pekerjaan Ibu' },
+    { key: 'sibling_order', label: 'Anak Ke' },
+    { key: 'sibling_count', label: 'Jumlah Bersaudara' },
+    { key: 'spouse_name', label: 'Nama Pasangan (Suami/Istri)' },
+    { key: 'spouse_birth_place_date', label: 'Tempat & Tanggal Lahir Pasangan' },
+    { key: 'school_name_city', label: 'Nama Sekolah & Kota' },
+    { key: 'school_major', label: 'Jurusan Sekolah' },
+    { key: 'work_experience', label: 'Riwayat Pengalaman Kerja' },
+    { key: 'reference_name', label: 'Nama Referensi' },
+    { key: 'reference_relationship', label: 'Hubungan Referensi' },
+    { key: 'reference_phone', label: 'Telepon Referensi' },
+];
+
 export default function Edit({ job, categories, hrisProjects = [] }: Props) {
     // Format deadline date to YYYY-MM-DD for HTML5 date input
     const formatDeadline = (dateString?: string) => {
@@ -40,6 +69,7 @@ export default function Edit({ job, categories, hrisProjects = [] }: Props) {
         categories: job.categories?.map((c) => c.id) || [] as number[],
         hris_project_id: job.hris_project_id || '',
         status: (job.status || 'draft') as 'draft' | 'published' | 'closed',
+        required_fields: job.required_fields || [] as string[],
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -311,6 +341,46 @@ export default function Edit({ job, categories, hrisProjects = [] }: Props) {
                                 <InputError message={errors.requirements} className="mt-2" />
                             </div>
                         </div>
+                    </div>
+
+                    {/* Section 4: Persyaratan Kolom Biodata Tambahan */}
+                    <div className="bg-white dark:bg-dark-surface/40 rounded-3xl p-6 sm:p-8 border border-slate-200/60 dark:border-slate-800/60 shadow-sm space-y-6">
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+                            <iconify-icon icon="solar:check-read-bold-duotone" width="22" className="text-primary dark:text-primary-light"></iconify-icon>
+                            Persyaratan Kolom Biodata Tambahan (Opsional)
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Secara default, kolom wajib bagi kandidat meliputi: Nama Lengkap, Nomor HP, Tempat & Tanggal Lahir, Jenis Kelamin, Agama, NIK KTP, Alamat KTP, CV, Foto Profil, Ibu Kandung, Status Pernikahan, Pendidikan Terakhir, Tahun Kelulusan, Kontak Darurat. Centang kolom di bawah ini jika Anda ingin mewajibkan data tambahan lainnya.
+                        </p>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                            {optionalBiodataFields.map((field) => (
+                                <label
+                                    key={field.key}
+                                    className={`flex items-center gap-3 p-3 rounded-xl border text-xs font-semibold cursor-pointer transition-all ${
+                                        data.required_fields?.includes(field.key)
+                                            ? 'bg-primary/5 border-primary text-primary dark:bg-primary-light/5 dark:border-primary-light dark:text-primary-light'
+                                            : 'bg-white dark:bg-dark-surface/30 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                    }`}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={data.required_fields?.includes(field.key)}
+                                        onChange={() => {
+                                            const current = data.required_fields || [];
+                                            if (current.includes(field.key)) {
+                                                setData('required_fields', current.filter((k) => k !== field.key));
+                                            } else {
+                                                setData('required_fields', [...current, field.key]);
+                                            }
+                                        }}
+                                        className="rounded border-slate-300 dark:border-slate-700 text-primary focus:ring-primary dark:bg-dark-surface/50"
+                                    />
+                                    {field.label}
+                                </label>
+                            ))}
+                        </div>
+                        <InputError message={errors.required_fields} className="mt-2" />
                     </div>
 
                     {/* Actions */}

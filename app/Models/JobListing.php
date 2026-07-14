@@ -28,6 +28,7 @@ class JobListing extends Model
         'quota',
         'deadline_at',
         'created_by',
+        'required_fields',
     ];
 
     protected function casts(): array
@@ -38,6 +39,7 @@ class JobListing extends Model
             'salary_range_min' => 'integer',
             'salary_range_max' => 'integer',
             'quota' => 'integer',
+            'required_fields' => 'array',
         ];
     }
 

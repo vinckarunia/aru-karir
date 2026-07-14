@@ -13,6 +13,7 @@ export default function HrLayout({ title, header, children }: PropsWithChildren<
     const user = auth.hr!;
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     const [isDarkMode, setIsDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -30,6 +31,17 @@ export default function HrLayout({ title, header, children }: PropsWithChildren<
             localStorage.setItem('theme', 'light');
         }
     }, [isDarkMode]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+            if (!target.closest('#profile-dropdown-container')) {
+                setIsDropdownOpen(false);
+            }
+        };
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
 
     const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
@@ -204,16 +216,47 @@ export default function HrLayout({ title, header, children }: PropsWithChildren<
                             <iconify-icon icon={isDarkMode ? "solar:sun-bold-duotone" : "solar:moon-bold-duotone"} width="22" className="group-hover:scale-110 transition-transform"></iconify-icon>
                         </button>
 
-                        <div className="flex items-center gap-3 p-1.5 pr-3 rounded-full">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-primary-light text-white flex items-center justify-center font-bold shadow-sm border-2 border-white dark:border-slate-800">
-                                {getInitials(user.name)}
-                            </div>
-                            <div className="hidden sm:block text-left">
-                                <p className="text-sm font-semibold text-slate-700 dark:text-white leading-none">{user.name}</p>
-                                <p className="text-xs text-slate-500 mt-1 font-medium uppercase tracking-wide">
-                                    {user.role === 'admin' ? 'Admin' : 'HR Recruiter'}
-                                </p>
-                            </div>
+                        {/* Profile Dropdown */}
+                        <div id="profile-dropdown-container" className="relative">
+                            <button
+                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                className="flex items-center gap-3 hover:bg-slate-100/60 dark:hover:bg-slate-800/60 p-1.5 pr-3 rounded-full transition-all duration-200 border border-transparent hover:border-slate-200/80 dark:hover:border-slate-700/80 cursor-pointer"
+                            >
+                                <div className="w-10 h-10 rounded-full bg-purple-600 dark:bg-purple-500 text-white flex items-center justify-center font-bold shadow-sm border-2 border-white dark:border-slate-800 shrink-0">
+                                    {getInitials(user.name)}
+                                </div>
+                                <div className="hidden sm:block text-left">
+                                    <p className="text-sm font-semibold text-slate-800 dark:text-white leading-none">{user.name}</p>
+                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-bold uppercase tracking-wider">
+                                        {user.role === 'admin' || user.is_admin ? 'Super Admin' : 'HR Recruiter'}
+                                    </p>
+                                </div>
+                                <iconify-icon icon="solar:alt-arrow-down-linear" width="16" className={`text-slate-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}></iconify-icon>
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            {isDropdownOpen && (
+                                <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white dark:bg-[#1b2330] border border-slate-200/80 dark:border-slate-800/80 shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <Link
+                                        href={(user.role === 'admin' || user.is_admin) ? route('admin.users.index') : '#'}
+                                        className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
+                                        onClick={() => setIsDropdownOpen(false)}
+                                    >
+                                        <iconify-icon icon="solar:settings-linear" width="18" className="text-slate-400 dark:text-slate-500"></iconify-icon>
+                                        Pengaturan Profil
+                                    </Link>
+                                    <Link
+                                        href={route('hr.logout')}
+                                        method="post"
+                                        as="button"
+                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors text-left cursor-pointer"
+                                        onClick={() => setIsDropdownOpen(false)}
+                                    >
+                                        <iconify-icon icon="solar:logout-linear" width="18" className="text-rose-500 dark:text-rose-400"></iconify-icon>
+                                        Log Out
+                                    </Link>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </header>

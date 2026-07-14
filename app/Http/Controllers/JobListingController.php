@@ -147,6 +147,8 @@ class JobListingController extends Controller
             'categories.*' => 'exists:job_categories,id',
             'hris_project_id' => 'nullable|string|max:255',
             'status' => 'required|in:draft,published,closed',
+            'required_fields' => 'nullable|array',
+            'required_fields.*' => 'string',
         ]);
 
         // Generate unique slug
@@ -211,6 +213,8 @@ class JobListingController extends Controller
             'categories.*' => 'exists:job_categories,id',
             'hris_project_id' => 'nullable|string|max:255',
             'status' => 'required|in:draft,published,closed',
+            'required_fields' => 'nullable|array',
+            'required_fields.*' => 'string',
         ]);
 
         // Re-generate slug if title changed
