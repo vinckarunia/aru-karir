@@ -6,12 +6,8 @@ import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import Checkbox from '@/Components/Checkbox';
+import HrisProjectPicker, { HrisProject } from '@/Components/HrisProjectPicker';
 import { JobCategory, JobListing } from '@/types';
-
-interface HrisProject {
-    id: string | number;
-    name: string;
-}
 
 interface Props {
     job: JobListing;
@@ -187,19 +183,11 @@ export default function Edit({ job, categories, hrisProjects = [] }: Props) {
                             {/* HRIS Project ID */}
                             <div className="md:col-span-2">
                                 <InputLabel htmlFor="hris_project_id" value="Hubungkan dengan Project HRIS (Opsional)" />
-                                <select
-                                    id="hris_project_id"
-                                    value={data.hris_project_id}
-                                    onChange={(e) => setData('hris_project_id', e.target.value)}
-                                    className="mt-1 block w-full px-4 py-3 rounded-xl bg-white dark:bg-dark-surface/50 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                                >
-                                    <option value="">-- Pilih Project HRIS --</option>
-                                    {hrisProjects.map((project) => (
-                                        <option key={project.id} value={project.id}>
-                                            {project.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                <HrisProjectPicker
+                                    projects={hrisProjects}
+                                    selectedId={data.hris_project_id}
+                                    onSelect={(projectId) => setData('hris_project_id', projectId)}
+                                />
                                 <p className="text-[11px] text-slate-400 mt-1.5">
                                     Pekerja baru akan otomatis disinkronkan ke project HRIS terpilih saat dinyatakan lolos rekrutmen.
                                 </p>

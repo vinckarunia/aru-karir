@@ -83,7 +83,14 @@ class HrisApiServiceTest extends TestCase
         Http::fake([
             'http://hris.test/api/internal/projects' => Http::response([
                 'data' => [
-                    ['id' => '10', 'name' => 'Real Project']
+                    [
+                        'id' => '10',
+                        'name' => 'Real Project',
+                        'client' => [
+                            'id' => '20',
+                            'name' => 'Real Client',
+                        ],
+                    ],
                 ]
             ], 200)
         ]);
@@ -93,6 +100,7 @@ class HrisApiServiceTest extends TestCase
 
         $this->assertCount(1, $projects);
         $this->assertEquals('Real Project', $projects[0]['name']);
+        $this->assertEquals('Real Client', $projects[0]['client']['name']);
     }
 
     public function test_create_data_request_makes_actual_http_request()
