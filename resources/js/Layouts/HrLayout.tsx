@@ -182,19 +182,6 @@ export default function HrLayout({ title, header, children }: PropsWithChildren<
                     )}
                 </nav>
 
-                {/* Logout Button */}
-                <div className={`p-4 border-t border-slate-100 dark:border-slate-800/80 shrink-0 ${isSidebarCollapsed ? 'flex justify-center' : ''}`}>
-                    <Link
-                        href={route('hr.logout')}
-                        method="post"
-                        as="button"
-                        className={`flex items-center gap-3 py-3 w-full rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-700 transition-all group ${isSidebarCollapsed ? 'justify-center px-0' : 'px-4'}`}
-                        title="Keluar"
-                    >
-                        <iconify-icon icon="solar:logout-linear" width="20" className="shrink-0 group-hover:scale-110 transition-transform"></iconify-icon>
-                        <span className={`font-semibold whitespace-nowrap transition-all duration-300 ${isSidebarCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100 block'}`}>Keluar</span>
-                    </Link>
-                </div>
             </aside>
 
             {/* Main */}

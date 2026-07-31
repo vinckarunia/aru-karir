@@ -6,13 +6,13 @@ import { Application } from '@/types';
 interface DashboardStats {
     active_listings: number;
     total_applications: number;
-    new_applications: number;
+    unread_applications: number;
     accepted_candidates: number;
 }
 
 interface Props {
     stats: DashboardStats;
-    recentApplications: Application[];
+    unreadApplications: Application[];
 }
 
 const stageLabels: Record<string, string> = {
@@ -24,7 +24,7 @@ const stageLabels: Record<string, string> = {
     onboarding: 'Onboarding',
 };
 
-export default function Dashboard({ stats, recentApplications }: Props) {
+export default function Dashboard({ stats, unreadApplications }: Props) {
     return (
         <HrLayout title="Dashboard" header="Dashboard">
             <Head title="HR Dashboard" />
@@ -34,7 +34,7 @@ export default function Dashboard({ stats, recentApplications }: Props) {
                 {[
                     { label: 'Lowongan Aktif', value: stats.active_listings, icon: 'solar:document-text-bold-duotone', color: 'text-primary', bg: 'bg-primary/10' },
                     { label: 'Total Pelamar', value: stats.total_applications, icon: 'solar:users-group-two-rounded-bold-duotone', color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-500/10' },
-                    { label: 'Lamaran Baru (Hari Ini)', value: stats.new_applications, icon: 'solar:inbox-in-bold-duotone', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/10' },
+                    { label: 'Lamaran Belum Dilihat', value: stats.unread_applications, icon: 'solar:inbox-in-bold-duotone', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/10' },
                     { label: 'Kandidat Diterima', value: stats.accepted_candidates, icon: 'solar:user-check-bold-duotone', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10' },
                 ].map((stat) => (
                     <div key={stat.label} className="glass rounded-2xl p-6 border border-slate-200/60 dark:border-slate-800/60 shadow-card">
@@ -51,14 +51,14 @@ export default function Dashboard({ stats, recentApplications }: Props) {
                 ))}
             </div>
 
-            {/* Recent Applications Table */}
+            {/* Unread Applications Table */}
             <div className="glass rounded-2xl p-6 border border-slate-200/60 dark:border-slate-800/60 shadow-card">
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-lg font-bold text-slate-800 dark:text-white">Lamaran Terbaru</h2>
-                    <span className="text-xs text-slate-400 font-medium">5 Aktivitas Terakhir</span>
+                    <h2 className="text-lg font-bold text-slate-800 dark:text-white">Lamaran Belum Dilihat</h2>
+                    <span className="text-xs text-slate-400 font-medium">{unreadApplications.length} Belum Dilihat</span>
                 </div>
 
-                {recentApplications.length > 0 ? (
+                {unreadApplications.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
@@ -72,7 +72,7 @@ export default function Dashboard({ stats, recentApplications }: Props) {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40 text-sm">
-                                {recentApplications.map((app) => (
+                                {unreadApplications.map((app) => (
                                     <tr key={app.id} className="hover:bg-slate-50/50 dark:hover:bg-dark-surface/10 transition-colors">
                                         <td className="py-4 px-4">
                                             <div className="font-semibold text-slate-800 dark:text-slate-200">
@@ -119,8 +119,8 @@ export default function Dashboard({ stats, recentApplications }: Props) {
                         <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
                             <iconify-icon icon="solar:inbox-line-linear" width="32" className="text-slate-400"></iconify-icon>
                         </div>
-                        <p className="text-slate-500 dark:text-slate-400 font-medium">Belum ada lamaran masuk.</p>
-                        <p className="text-slate-400 dark:text-slate-500 text-xs mt-1">Lamaran dari kandidat akan ditampilkan di sini.</p>
+                        <p className="text-slate-500 dark:text-slate-400 font-medium">Semua lamaran sudah dilihat.</p>
+                        <p className="text-slate-400 dark:text-slate-500 text-xs mt-1">Lamaran baru yang belum dilihat akan ditampilkan di sini.</p>
                     </div>
                 )}
             </div>

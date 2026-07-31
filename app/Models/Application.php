@@ -18,12 +18,14 @@ class Application extends Model
         'current_stage',
         'current_status',
         'applied_at',
+        'viewed_at',
     ];
 
     protected function casts(): array
     {
         return [
             'applied_at' => 'datetime',
+            'viewed_at' => 'datetime',
         ];
     }
 

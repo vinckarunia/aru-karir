@@ -20,6 +20,12 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
         ]);
 
+        $middleware->redirectUsersTo(
+            fn (Request $request) => $request->is('hr', 'hr/*')
+                ? route('hr.dashboard')
+                : route('home')
+        );
+
         $middleware->alias([
             'auth.candidate' => AuthenticateCandidate::class,
             'auth.hr' => AuthenticateHr::class,

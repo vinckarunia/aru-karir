@@ -113,6 +113,7 @@ export interface Application {
     current_stage: StageName;
     current_status: StageStatus;
     applied_at: string;
+    viewed_at?: string | null;
     candidate?: Candidate;
     job_listing?: JobListing;
     stages?: ApplicationStage[];

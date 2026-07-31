@@ -69,9 +69,14 @@ Route::prefix('kandidat')->middleware('auth.candidate')->group(function () {
 */
 
 Route::prefix('hr')->group(function () {
+    Route::get('/', function () {
+        return redirect()->route(
+            auth('hr')->check() ? 'hr.dashboard' : 'hr.login'
+        );
+    })->name('hr.index');
+
     Route::middleware('guest:hr')->group(function () {
         Route::get('/login', [HrAuthController::class, 'showLogin'])->name('hr.login');
-        Route::redirect('/', '/hr/login');
         Route::post('/login', [HrAuthController::class, 'login']);
     });
 });

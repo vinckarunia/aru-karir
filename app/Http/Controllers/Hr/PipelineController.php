@@ -43,6 +43,10 @@ class PipelineController extends Controller
             'stages.actionedBy',
         ])->findOrFail($applicationId);
 
+        if (is_null($application->viewed_at)) {
+            $application->forceFill(['viewed_at' => now()])->save();
+        }
+
         return Inertia::render('Hr/Pipeline/Show', [
             'application' => $application,
         ]);
