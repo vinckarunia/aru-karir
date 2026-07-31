@@ -1,14 +1,15 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import PublicLayout from '@/Layouts/PublicLayout';
 import CandidateLayout from '@/Layouts/CandidateLayout';
-import { JobListing, PageProps } from '@/types';
+import { BusinessOption, JobListing, PageProps } from '@/types';
 
 interface Props {
     job: JobListing;
     hasApplied?: boolean;
+    contractTypes: BusinessOption[];
 }
 
-export default function JobDetail({ job, hasApplied }: Props) {
+export default function JobDetail({ job, hasApplied, contractTypes }: Props) {
     const { auth } = usePage<PageProps>().props;
 
     // Helper to format currency
@@ -23,14 +24,7 @@ export default function JobDetail({ job, hasApplied }: Props) {
     };
 
     // Helper to map contract type label
-    const getContractTypeLabel = (type: string) => {
-        switch (type) {
-            case 'pkwt': return 'PKWT (Kontrak)';
-            case 'pkwtt': return 'PKWTT (Tetap)';
-            case 'freelance': return 'Freelance';
-            default: return type;
-        }
-    };
+    const getContractTypeLabel = (type: string) => contractTypes.find((option) => option.code === type)?.label || type;
 
     const Layout = auth.candidate ? CandidateLayout : PublicLayout;
     const layoutProps = {

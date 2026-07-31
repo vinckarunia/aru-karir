@@ -5,13 +5,14 @@ import TextInput from '@/Components/TextInput';
 import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
-import { FlashMessages } from '@/types';
+import { BusinessOption, FlashMessages } from '@/types';
 
 interface CustomField {
     id: number;
     field_name: string;
     field_label: string;
-    field_type: 'text' | 'textarea' | 'file' | 'select';
+    field_type: 'text' | 'textarea' | 'file' | 'select' | 'checklist';
+    form_section: 'personal' | 'family' | 'education' | 'references' | 'custom';
     is_required: boolean;
     options: string[] | null;
 }
@@ -30,9 +31,20 @@ interface Props {
     customValues: Record<number, CustomValue>;
     job?: string;
     jobRequiredFields?: string[];
+    businessOptions: Record<string, BusinessOption[]>;
 }
 
-export default function Edit({ candidate, customFields, customValues, job, jobRequiredFields = [] }: Props) {
+const parseChecklistValue = (value?: string | null): string[] => {
+    if (!value) return [];
+    try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+};
+
+export default function Edit({ candidate, customFields, customValues, job, jobRequiredFields = [], businessOptions }: Props) {
     const flash = usePage().props.flash as FlashMessages;
     const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'education' | 'references' | 'custom'>('personal');
 
@@ -58,7 +70,6 @@ export default function Edit({ candidate, customFields, customValues, job, jobRe
     ];
 
     const isRequired = (fieldKey: string) => requiredByDefault.includes(fieldKey) || jobRequiredFields.includes(fieldKey);
-
     // Initialize children list from candidate data
     const [childrenList, setChildrenList] = useState<{name: string, birth_place_date: string}[]>(() => {
         const list = [];
@@ -164,6 +175,13 @@ export default function Edit({ candidate, customFields, customValues, job, jobRe
         work_experience: candidate.work_experience || [],
 
         // New References & Emergency Contacts
+        references: candidate.references?.length ? candidate.references : (
+            candidate.reference_name ? [{ name: candidate.reference_name, relationship: candidate.reference_relationship || '', phone: candidate.reference_phone || '' }] : []
+        ),
+        emergency_contacts: candidate.emergency_contacts?.length ? candidate.emergency_contacts : [{
+            name: candidate.emergency_name || '', relationship: candidate.emergency_relationship || '',
+            phone: candidate.emergency_phone || '', address: candidate.emergency_address || '',
+        }],
         reference_name: candidate.reference_name || '',
         reference_relationship: candidate.reference_relationship || '',
         reference_phone: candidate.reference_phone || '',
@@ -179,10 +197,17 @@ export default function Edit({ candidate, customFields, customValues, job, jobRe
 
     // Populate custom fields values
     customFields.forEach((field) => {
-        initialFormState[`custom_${field.id}`] = field.field_type === 'file' ? null : (customValues[field.id]?.value || '');
+        initialFormState[`custom_${field.id}`] = field.field_type === 'file'
+            ? null
+            : field.field_type === 'checklist'
+                ? parseChecklistValue(customValues[field.id]?.value)
+                : (customValues[field.id]?.value || '');
     });
 
     const { data, setData, post, processing, errors, progress } = useForm(initialFormState);
+    const optionsFor = (group: string, currentValue?: string) =>
+        (businessOptions[group] || []).filter((option) => option.is_active || option.code === currentValue);
+    const visibleCustomFields = customFields.filter((field) => field.form_section === activeTab);
 
     const cvInputRef = useRef<HTMLInputElement>(null);
     const photoInputRef = useRef<HTMLInputElement>(null);
@@ -196,7 +221,6 @@ export default function Edit({ candidate, customFields, customValues, job, jobRe
 
     // Work Experience Helpers
     const handleAddExperience = () => {
-        if (data.work_experience.length >= 4) return;
         const newExp = { company: '', position: '', period: '', last_salary: '', resign_reason: '' };
         setData('work_experience', [...data.work_experience, newExp]);
     };
@@ -211,6 +235,22 @@ export default function Edit({ candidate, customFields, customValues, job, jobRe
         const updated = [...data.work_experience];
         updated[index] = { ...updated[index], [key]: value };
         setData('work_experience', updated);
+    };
+
+    const addContact = (key: 'references' | 'emergency_contacts') => {
+        if (data[key].length >= 3) return;
+        const empty = key === 'references'
+            ? { name: '', relationship: '', phone: '' }
+            : { name: '', relationship: '', phone: '', address: '' };
+        setData(key, [...data[key], empty]);
+    };
+    const updateContact = (key: 'references' | 'emergency_contacts', index: number, field: string, value: string) => {
+        const updated = [...data[key]];
+        updated[index] = { ...updated[index], [field]: value };
+        setData(key, updated);
+    };
+    const removeContact = (key: 'references' | 'emergency_contacts', index: number) => {
+        setData(key, data[key].filter((_: any, itemIndex: number) => itemIndex !== index));
     };
 
     // Determine which tabs have validation errors
@@ -228,11 +268,11 @@ export default function Edit({ candidate, customFields, customValues, job, jobRe
             ],
             education: ['school_name_city', 'school_major', 'school_graduation_year', 'work_experience'],
             references: [
-                'reference_name', 'reference_relationship', 'reference_phone',
-                'emergency_name', 'emergency_relationship', 'emergency_phone', 'emergency_address'
+                'references', 'emergency_contacts'
             ],
-            custom: customFields.map(f => `custom_${f.id}`)
+            custom: customFields.filter(f => f.form_section === 'custom').map(f => `custom_${f.id}`)
         };
+        customFields.forEach((field) => keys[field.form_section].push(`custom_${field.id}`));
 
         return keys[tab].some(key => errors[key] !== undefined || Object.keys(errors).some(ek => ek.startsWith(`${key}.`)));
     };
@@ -271,6 +311,23 @@ export default function Edit({ candidate, customFields, customValues, job, jobRe
                             </option>
                         ))}
                     </select>
+                );
+            case 'checklist':
+                return (
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        {field.options?.map((option) => {
+                            const selected = (data[inputName] || []) as string[];
+                            return (
+                                <label key={option} className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 p-3 text-sm font-semibold dark:border-slate-800">
+                                    <Checkbox
+                                        checked={selected.includes(option)}
+                                        onChange={(event) => setData(inputName, event.target.checked ? [...selected, option] : selected.filter((item) => item !== option))}
+                                    />
+                                    {option}
+                                </label>
+                            );
+                        })}
+                    </div>
                 );
             case 'file':
                 const fileVal = customValues[field.id];
@@ -315,6 +372,33 @@ export default function Edit({ candidate, customFields, customValues, job, jobRe
                 );
         }
     };
+
+    const renderContacts = (key: 'references' | 'emergency_contacts', title: string, required: boolean) => (
+        <section className="space-y-4">
+            <div className="flex items-center justify-between">
+                <h4 className="font-bold text-slate-800 dark:text-slate-200">{title} {required && <span className="text-red-500">*</span>}</h4>
+                <button type="button" disabled={data[key].length >= 3} onClick={() => addContact(key)} className="rounded-xl bg-primary/10 px-3 py-2 text-xs font-bold text-primary disabled:opacity-40">
+                    + Tambah ({data[key].length}/3)
+                </button>
+            </div>
+            {data[key].map((contact: any, index: number) => (
+                <div key={index} className="rounded-2xl border border-slate-200/60 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-dark-surface/30">
+                    <div className="mb-3 flex justify-between">
+                        <span className="text-xs font-bold text-primary">{title} #{index + 1}</span>
+                        {(!required || data[key].length > 1) && <button type="button" onClick={() => removeContact(key, index)} className="text-xs font-bold text-red-500">Hapus</button>}
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-3">
+                        <TextInput value={contact.name} onChange={(e) => updateContact(key, index, 'name', e.target.value)} placeholder="Nama lengkap" required />
+                        <TextInput value={contact.relationship} onChange={(e) => updateContact(key, index, 'relationship', e.target.value)} placeholder="Hubungan" required />
+                        <TextInput type="tel" value={contact.phone} onChange={(e) => updateContact(key, index, 'phone', e.target.value)} placeholder="Nomor HP" required />
+                        {key === 'emergency_contacts' && <textarea value={contact.address} onChange={(e) => updateContact(key, index, 'address', e.target.value)} placeholder="Alamat lengkap" required rows={2} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm md:col-span-3 dark:border-slate-800 dark:bg-dark-surface/40" />}
+                    </div>
+                    <InputError message={(errors as any)[`${key}.${index}.name`] || (errors as any)[`${key}.${index}.phone`]} className="mt-2" />
+                </div>
+            ))}
+            {!required && data[key].length === 0 && <p className="rounded-xl border border-dashed border-slate-200 p-5 text-center text-xs text-slate-400 dark:border-slate-800">Belum ada kontak referensi.</p>}
+        </section>
+    );
 
     return (
         <CandidateLayout title="Lengkapi Profil — ARUKarir">
@@ -428,7 +512,7 @@ export default function Edit({ candidate, customFields, customValues, job, jobRe
                         )}
                     </button>
 
-                    {customFields.length > 0 && (
+                    {customFields.some((field) => field.form_section === 'custom') && (
                         <button
                             type="button"
                             onClick={() => setActiveTab('custom')}
@@ -527,8 +611,7 @@ export default function Edit({ candidate, customFields, customValues, job, jobRe
                                         required={isRequired('gender')}
                                     >
                                         <option value="">Belum dipilih</option>
-                                        <option value="male">Laki-laki</option>
-                                        <option value="female">Perempuan</option>
+                                        {optionsFor('gender', data.gender).map((option) => <option key={option.id} value={option.code}>{option.label}</option>)}
                                     </select>
                                     <InputError message={errors.gender} className="mt-2" />
                                 </div>
@@ -544,13 +627,7 @@ export default function Edit({ candidate, customFields, customValues, job, jobRe
                                         required={isRequired('religion')}
                                     >
                                         <option value="">Belum dipilih</option>
-                                        <option value="Islam">Islam</option>
-                                        <option value="Kristen">Kristen</option>
-                                        <option value="Katolik">Katolik</option>
-                                        <option value="Hindu">Hindu</option>
-                                        <option value="Budha">Budha</option>
-                                        <option value="Konghucu">Konghucu</option>
-                                        <option value="Lainnya">Lainnya</option>
+                                        {optionsFor('religion', data.religion).map((option) => <option key={option.id} value={option.code}>{option.label}</option>)}
                                     </select>
                                     <InputError message={errors.religion} className="mt-2" />
                                 </div>
@@ -566,10 +643,7 @@ export default function Edit({ candidate, customFields, customValues, job, jobRe
                                         required={isRequired('blood_type')}
                                     >
                                         <option value="">Belum dipilih</option>
-                                        <option value="A">A</option>
-                                        <option value="B">B</option>
-                                        <option value="AB">AB</option>
-                                        <option value="O">O</option>
+                                        {optionsFor('blood_type', data.blood_type).map((option) => <option key={option.id} value={option.code}>{option.label}</option>)}
                                     </select>
                                     <InputError message={errors.blood_type} className="mt-2" />
                                 </div>
@@ -762,12 +836,7 @@ export default function Edit({ candidate, customFields, customValues, job, jobRe
                                             required={isRequired('size_uniform')}
                                         >
                                             <option value="">Pilih Ukuran</option>
-                                            <option value="S">S</option>
-                                            <option value="M">M</option>
-                                            <option value="L">L</option>
-                                            <option value="XL">XL</option>
-                                            <option value="XXL">XXL</option>
-                                            <option value="XXXL">XXXL</option>
+                                            {optionsFor('uniform_size', data.size_uniform).map((option) => <option key={option.id} value={option.code}>{option.label}</option>)}
                                         </select>
                                         <InputError message={errors.size_uniform} className="mt-2" />
                                     </div>
@@ -971,10 +1040,7 @@ export default function Edit({ candidate, customFields, customValues, job, jobRe
                                             onChange={(e) => setData('marital_status', e.target.value)}
                                             required={isRequired('marital_status')}
                                         >
-                                            <option value="belum_nikah">Belum Menikah</option>
-                                            <option value="nikah">Menikah</option>
-                                            <option value="duda">Duda</option>
-                                            <option value="janda">Janda</option>
+                                            {optionsFor('marital_status', data.marital_status).map((option) => <option key={option.id} value={option.code}>{option.label}</option>)}
                                         </select>
                                         <InputError message={errors.marital_status} className="mt-2" />
                                     </div>
@@ -1105,13 +1171,7 @@ export default function Edit({ candidate, customFields, customValues, job, jobRe
                                         onChange={(e) => setData('education_level', e.target.value)}
                                         required={isRequired('education_level')}
                                     >
-                                        <option value="SD">SD</option>
-                                        <option value="SMP">SMP</option>
-                                        <option value="SMA/SMK">SMA/SMK / Sederajat</option>
-                                        <option value="D1/D2/D3">Diploma (D1/D2/D3)</option>
-                                        <option value="S1">Sarjana (S1)</option>
-                                        <option value="S2">Magister (S2)</option>
-                                        <option value="S3">Doktor (S3)</option>
+                                        {optionsFor('education_level', data.education_level).map((option) => <option key={option.id} value={option.code}>{option.label}</option>)}
                                     </select>
                                     <InputError message={errors.education_level} className="mt-2" />
                                 </div>
@@ -1166,11 +1226,10 @@ export default function Edit({ candidate, customFields, customValues, job, jobRe
                                 <div className="flex justify-between items-center">
                                     <h4 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                                         <iconify-icon icon="solar:case-round-bold-duotone" width="18" className="text-primary"></iconify-icon>
-                                        Riwayat Pengalaman Kerja (Maksimal 4)
+                                        Riwayat Pengalaman Kerja
                                     </h4>
                                     <button
                                         type="button"
-                                        disabled={data.work_experience.length >= 4}
                                         onClick={handleAddExperience}
                                         className="text-xs font-bold bg-primary/10 hover:bg-primary/20 text-primary px-3 py-2 rounded-xl transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
@@ -1274,7 +1333,12 @@ export default function Edit({ candidate, customFields, customValues, job, jobRe
                                 Kontak Referensi
                             </h3>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {renderContacts('references', 'Kontak Referensi', false)}
+                            <div className="border-t border-slate-100 pt-6 dark:border-slate-800">
+                                {renderContacts('emergency_contacts', 'Kontak Darurat', true)}
+                            </div>
+
+                            <fieldset disabled className="hidden">
                                 <div>
                                     <InputLabel htmlFor="reference_name">Nama Referensi {isRequired('reference_name') && <span className="text-red-500">*</span>}</InputLabel>
                                     <TextInput
@@ -1317,9 +1381,9 @@ export default function Edit({ candidate, customFields, customValues, job, jobRe
                                     />
                                     <InputError message={errors.reference_phone} className="mt-2" />
                                 </div>
-                            </div>
+                            </fieldset>
 
-                            <div className="border-t border-slate-100 dark:border-slate-800 pt-6 space-y-6">
+                            <fieldset disabled className="hidden">
                                 <h3 className="text-lg font-bold border-b border-slate-100 dark:border-slate-800 pb-3 text-slate-900 dark:text-white flex items-center gap-2">
                                     <iconify-icon icon="solar:danger-bold-duotone" width="20" className="text-primary"></iconify-icon>
                                     Kontak Darurat
@@ -1384,12 +1448,12 @@ export default function Edit({ candidate, customFields, customValues, job, jobRe
                                         <InputError message={errors.emergency_address} className="mt-2" />
                                     </div>
                                 </div>
-                            </div>
+                            </fieldset>
                         </div>
                     )}
 
                     {/* TAB 5: INFORMASI TAMBAHAN (CUSTOM FIELDS) */}
-                    {activeTab === 'custom' && customFields.length > 0 && (
+                    {visibleCustomFields.length > 0 && (
                         <div className="bg-white dark:bg-dark-surface/20 rounded-3xl p-6 sm:p-8 border border-slate-200/60 dark:border-slate-800/60 shadow-sm space-y-6">
                             <h3 className="text-lg font-bold border-b border-slate-100 dark:border-slate-800 pb-3 text-slate-900 dark:text-white flex items-center gap-2">
                                 <iconify-icon icon="solar:add-square-bold-duotone" width="20" className="text-primary"></iconify-icon>
@@ -1397,7 +1461,7 @@ export default function Edit({ candidate, customFields, customValues, job, jobRe
                             </h3>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {customFields.map((field) => (
+                                {visibleCustomFields.map((field) => (
                                     <div key={field.id} className={field.field_type === 'textarea' ? 'md:col-span-2' : ''}>
                                         <InputLabel htmlFor={`custom_${field.id}`}>
                                             {field.field_label}

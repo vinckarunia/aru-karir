@@ -15,7 +15,8 @@ interface CandidateProfileField {
     id: number;
     field_name: string;
     field_label: string;
-    field_type: 'text' | 'textarea' | 'file' | 'select';
+    field_type: 'text' | 'textarea' | 'file' | 'select' | 'checklist';
+    form_section: 'personal' | 'family' | 'education' | 'references' | 'custom';
     is_required: boolean;
     sort_order: number;
     options: string[] | null;
@@ -42,7 +43,8 @@ export default function ProfileFieldsIndex({ fields }: Props) {
     const createForm = useForm({
         field_name: '',
         field_label: '',
-        field_type: 'text' as 'text' | 'textarea' | 'file' | 'select',
+        field_type: 'text' as 'text' | 'textarea' | 'file' | 'select' | 'checklist',
+        form_section: 'custom' as CandidateProfileField['form_section'],
         is_required: false,
         options: [] as string[],
     });
@@ -50,7 +52,8 @@ export default function ProfileFieldsIndex({ fields }: Props) {
     // Edit form
     const editForm = useForm({
         field_label: '',
-        field_type: 'text' as 'text' | 'textarea' | 'file' | 'select',
+        field_type: 'text' as 'text' | 'textarea' | 'file' | 'select' | 'checklist',
+        form_section: 'custom' as CandidateProfileField['form_section'],
         is_required: false,
         options: [] as string[],
         is_active: true,
@@ -69,6 +72,7 @@ export default function ProfileFieldsIndex({ fields }: Props) {
         editForm.setData({
             field_label: field.field_label,
             field_type: field.field_type,
+            form_section: field.form_section,
             is_required: field.is_required,
             options: field.options || [],
             is_active: field.is_active,
@@ -244,7 +248,8 @@ export default function ProfileFieldsIndex({ fields }: Props) {
                                         Tipe: <span className="font-medium text-slate-500 dark:text-slate-300 uppercase">{field.field_type}</span>
                                     </p>
                                     
-                                    {field.field_type === 'select' && field.options && (
+                                    <p className="mt-1 text-xs text-slate-400">Penempatan: {field.form_section}</p>
+                                    {['select', 'checklist'].includes(field.field_type) && field.options && (
                                         <div className="flex flex-wrap gap-1 mt-2.5">
                                             {field.options.map((opt) => (
                                                 <span key={opt} className="px-2 py-0.5 rounded bg-primary/5 border border-primary/10 text-primary dark:text-primary-light text-[10px] font-semibold">
@@ -334,8 +339,17 @@ export default function ProfileFieldsIndex({ fields }: Props) {
                                 <option value="textarea">Textarea (Paragraf)</option>
                                 <option value="file">File Upload (PDF/Dokumen)</option>
                                 <option value="select">Dropdown (Pilihan)</option>
+                                <option value="checklist">Checklist (Bisa Pilih Banyak)</option>
                             </select>
                             <InputError message={createForm.errors.field_type} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="form_section" value="Penempatan pada Form Profil" />
+                            <select id="form_section" value={createForm.data.form_section} onChange={(e) => createForm.setData('form_section', e.target.value as CandidateProfileField['form_section'])} className="mt-1 block w-full rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-dark-surface/40 px-4 py-3">
+                                <option value="personal">Data Diri</option><option value="family">Keluarga</option><option value="education">Pendidikan & Kerja</option><option value="references">Referensi & Darurat</option><option value="custom">Bagian Tambahan</option>
+                            </select>
+                            <InputError message={createForm.errors.form_section} className="mt-2" />
                         </div>
 
                         <div className="flex items-center gap-2 py-2">
@@ -347,7 +361,7 @@ export default function ProfileFieldsIndex({ fields }: Props) {
                             <InputLabel htmlFor="is_required" value="Field Wajib Diisi (Required)" className="cursor-pointer" />
                         </div>
 
-                        {createForm.data.field_type === 'select' && (
+                        {['select', 'checklist'].includes(createForm.data.field_type) && (
                             <div className="border border-slate-200/60 dark:border-slate-800/60 p-4 rounded-2xl bg-slate-50/50 dark:bg-dark-surface/10 space-y-4">
                                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Opsi Pilihan Dropdown</h4>
                                 
@@ -433,8 +447,17 @@ export default function ProfileFieldsIndex({ fields }: Props) {
                                 <option value="textarea">Textarea (Paragraf)</option>
                                 <option value="file">File Upload (PDF/Dokumen)</option>
                                 <option value="select">Dropdown (Pilihan)</option>
+                                <option value="checklist">Checklist (Bisa Pilih Banyak)</option>
                             </select>
                             <InputError message={editForm.errors.field_type} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <InputLabel htmlFor="edit_form_section" value="Penempatan pada Form Profil" />
+                            <select id="edit_form_section" value={editForm.data.form_section} onChange={(e) => editForm.setData('form_section', e.target.value as CandidateProfileField['form_section'])} className="mt-1 block w-full rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-dark-surface/40 px-4 py-3">
+                                <option value="personal">Data Diri</option><option value="family">Keluarga</option><option value="education">Pendidikan & Kerja</option><option value="references">Referensi & Darurat</option><option value="custom">Bagian Tambahan</option>
+                            </select>
+                            <InputError message={editForm.errors.form_section} className="mt-2" />
                         </div>
 
                         <div className="flex items-center gap-2 py-2">
@@ -455,7 +478,7 @@ export default function ProfileFieldsIndex({ fields }: Props) {
                             <InputLabel htmlFor="edit_is_active" value="Aktif (Tampilkan di Formulir Pelamar)" className="cursor-pointer" />
                         </div>
 
-                        {editForm.data.field_type === 'select' && (
+                        {['select', 'checklist'].includes(editForm.data.field_type) && (
                             <div className="border border-slate-200/60 dark:border-slate-800/60 p-4 rounded-2xl bg-slate-50/50 dark:bg-dark-surface/10 space-y-4">
                                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Opsi Pilihan Dropdown</h4>
                                 

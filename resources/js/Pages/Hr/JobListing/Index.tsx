@@ -1,7 +1,7 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import HrLayout from '@/Layouts/HrLayout';
 import Pagination from '@/Components/Pagination';
-import { JobListing, PaginatedData } from '@/types';
+import { JobListing, PageProps, PaginatedData } from '@/types';
 import { useState } from 'react';
 
 interface Props {
@@ -10,6 +10,7 @@ interface Props {
 
 export default function Index({ listings }: Props) {
     const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
+    const { businessOptions } = usePage<PageProps>().props;
 
     const handleStatusChange = (id: string, status: 'draft' | 'published' | 'closed') => {
         router.patch(route('hr.lowongan.toggle', id), { status }, {
@@ -37,14 +38,7 @@ export default function Index({ listings }: Props) {
         }
     };
 
-    const getContractTypeLabel = (type: string) => {
-        switch (type) {
-            case 'pkwt': return 'PKWT';
-            case 'pkwtt': return 'PKWTT';
-            case 'freelance': return 'Freelance';
-            default: return type;
-        }
-    };
+    const getContractTypeLabel = (type: string) => businessOptions.contract_type?.find((option) => option.code === type)?.label || type;
 
     // Calculate stats from the listings page for display (can be mock / estimate based on current page or simple summary)
     const totalCount = listings.total;

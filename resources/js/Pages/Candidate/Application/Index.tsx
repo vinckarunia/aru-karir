@@ -1,6 +1,7 @@
 import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import CandidateLayout from '@/Layouts/CandidateLayout';
+import { PageProps } from '@/types';
 
 interface Category {
     id: number;
@@ -32,6 +33,7 @@ interface Props {
 }
 
 export default function Index({ applications }: Props) {
+    const { businessOptions } = usePage<PageProps>().props;
     const getStageLabel = (stage: string) => {
         const stages: Record<string, string> = {
             apply: 'Lamaran Dikirim',
@@ -79,12 +81,7 @@ export default function Index({ applications }: Props) {
     };
 
     const getContractTypeLabel = (type: string) => {
-        const types: Record<string, string> = {
-            pkwt: 'PKWT',
-            pkwtt: 'PKWTT',
-            freelance: 'Freelance',
-        };
-        return types[type] || type;
+        return businessOptions.contract_type?.find((option) => option.code === type)?.label || type;
     };
 
     return (

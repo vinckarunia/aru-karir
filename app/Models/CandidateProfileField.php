@@ -10,6 +10,7 @@ class CandidateProfileField extends Model
         'field_name',
         'field_label',
         'field_type',
+        'form_section',
         'is_required',
         'sort_order',
         'options',

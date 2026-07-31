@@ -7,11 +7,12 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import Checkbox from '@/Components/Checkbox';
 import HrisProjectPicker, { HrisProject } from '@/Components/HrisProjectPicker';
-import { JobCategory } from '@/types';
+import { BusinessOption, JobCategory } from '@/types';
 
 interface Props {
     categories: JobCategory[];
     hrisProjects?: HrisProject[];
+    contractTypes: BusinessOption[];
 }
 
 const optionalBiodataFields = [
@@ -43,13 +44,13 @@ const optionalBiodataFields = [
     { key: 'reference_phone', label: 'Telepon Referensi' },
 ];
 
-export default function Create({ categories, hrisProjects = [] }: Props) {
+export default function Create({ categories, hrisProjects = [], contractTypes }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         title: '',
         description: '',
         requirements: '',
         location: '',
-        contract_type: 'pkwt' as 'pkwt' | 'pkwtt' | 'freelance',
+        contract_type: contractTypes[0]?.code || '',
         salary_range_min: '' as number | string,
         salary_range_max: '' as number | string,
         salary_visible: false,
@@ -137,12 +138,10 @@ export default function Create({ categories, hrisProjects = [] }: Props) {
                                 <select
                                     id="contract_type"
                                     value={data.contract_type}
-                                    onChange={(e) => setData('contract_type', e.target.value as any)}
+                                    onChange={(e) => setData('contract_type', e.target.value)}
                                     className="mt-1 block w-full px-4 py-3 rounded-xl bg-white dark:bg-dark-surface/50 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                                 >
-                                    <option value="pkwt">PKWT (Kontrak)</option>
-                                    <option value="pkwtt">PKWTT (Karyawan Tetap)</option>
-                                    <option value="freelance">Freelance</option>
+                                    {contractTypes.map((option) => <option key={option.id} value={option.code}>{option.label}</option>)}
                                 </select>
                                 <InputError message={errors.contract_type} className="mt-2" />
                             </div>

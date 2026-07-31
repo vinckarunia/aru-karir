@@ -112,6 +112,7 @@ Route::prefix('hr')->middleware('auth.hr')->group(function () {
 use App\Http\Controllers\Hr\Admin\HrUserController;
 use App\Http\Controllers\Hr\Admin\JobCategoryController;
 use App\Http\Controllers\Hr\Admin\ProfileFieldController;
+use App\Http\Controllers\Hr\Admin\BusinessOptionController;
 
 Route::prefix('hr/admin')->middleware('auth.hr:admin')->group(function () {
     Route::get('/users', [HrUserController::class, 'index'])->name('admin.users.index');
@@ -129,4 +130,9 @@ Route::prefix('hr/admin')->middleware('auth.hr:admin')->group(function () {
     Route::put('/config/{id}', [ProfileFieldController::class, 'update'])->name('admin.config.update');
     Route::delete('/config/{id}', [ProfileFieldController::class, 'destroy'])->name('admin.config.destroy');
     Route::post('/config/reorder', [ProfileFieldController::class, 'reorder'])->name('admin.config.reorder');
+
+    Route::get('/options', [BusinessOptionController::class, 'index'])->name('admin.options.index');
+    Route::post('/options', [BusinessOptionController::class, 'store'])->name('admin.options.store');
+    Route::put('/options/{option}', [BusinessOptionController::class, 'update'])->name('admin.options.update');
+    Route::delete('/options/{option}', [BusinessOptionController::class, 'destroy'])->name('admin.options.destroy');
 });

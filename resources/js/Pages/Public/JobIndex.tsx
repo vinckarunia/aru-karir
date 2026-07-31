@@ -4,7 +4,7 @@ import PublicLayout from '@/Layouts/PublicLayout';
 import CandidateLayout from '@/Layouts/CandidateLayout';
 import Pagination from '@/Components/Pagination';
 import EmptyState from '@/Components/EmptyState';
-import { JobCategory, JobListing, PaginatedData, PageProps } from '@/types';
+import { BusinessOption, JobCategory, JobListing, PaginatedData, PageProps } from '@/types';
 
 interface Props {
     listings: PaginatedData<JobListing>;
@@ -16,9 +16,10 @@ interface Props {
         contract_type?: string;
         location?: string;
     };
+    contractTypes: BusinessOption[];
 }
 
-export default function JobIndex({ listings, categories, locations, filters }: Props) {
+export default function JobIndex({ listings, categories, locations, filters, contractTypes }: Props) {
     const { auth } = usePage<PageProps>().props;
     const [search, setSearch] = useState(filters.search || '');
     const [category, setCategory] = useState(filters.category || '');
@@ -68,14 +69,7 @@ export default function JobIndex({ listings, categories, locations, filters }: P
     };
 
     // Helper to map contract type label
-    const getContractTypeLabel = (type: string) => {
-        switch (type) {
-            case 'pkwt': return 'PKWT (Kontrak)';
-            case 'pkwtt': return 'PKWTT (Tetap)';
-            case 'freelance': return 'Freelance';
-            default: return type;
-        }
-    };
+    const getContractTypeLabel = (type: string) => contractTypes.find((option) => option.code === type)?.label || type;
 
     const Layout = auth.candidate ? CandidateLayout : PublicLayout;
     const layoutProps = {
@@ -178,9 +172,7 @@ export default function JobIndex({ listings, categories, locations, filters }: P
                                         className="w-full px-4 py-3 rounded-xl bg-white/50 dark:bg-dark-surface/50 border border-slate-200/60 dark:border-slate-800/60 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all appearance-none"
                                     >
                                         <option value="">Tipe Kontrak</option>
-                                        <option value="pkwt">PKWT (Kontrak)</option>
-                                        <option value="pkwtt">PKWTT (Tetap)</option>
-                                        <option value="freelance">Freelance</option>
+                                        {contractTypes.map((option) => <option key={option.id} value={option.code}>{option.label}</option>)}
                                     </select>
                                 </div>
                             </div>

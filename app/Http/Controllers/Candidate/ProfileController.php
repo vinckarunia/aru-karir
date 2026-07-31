@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\CandidateProfileField;
 use App\Models\CandidateFieldValue;
 use App\Models\JobListing;
+use App\Models\BusinessOption;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -41,6 +43,7 @@ class ProfileController extends Controller
             'customValues' => $customValues,
             'job' => $request->query('job'),
             'jobRequiredFields' => $jobListing ? ($jobListing->required_fields ?: []) : [],
+            'businessOptions' => BusinessOption::grouped(false),
         ]);
     }
 
@@ -84,24 +87,28 @@ class ProfileController extends Controller
         $isFieldRequired = function ($fieldName) use ($requiredByDefault, $jobRequiredFields) {
             return in_array($fieldName, $requiredByDefault) || in_array($fieldName, $jobRequiredFields);
         };
+        $allowedOptionCodes = fn (string $group, ?string $current) => array_values(array_unique(array_filter([
+            ...BusinessOption::codes($group),
+            $current,
+        ])));
 
         // 1. Standard Fields Validation
         $rules = [
             'name' => ($isFieldRequired('name') ? 'required' : 'nullable') . '|string|max:255',
             'phone' => ($isFieldRequired('phone') ? 'required' : 'nullable') . '|string|max:20',
             'birth_date' => ($isFieldRequired('birth_date') ? 'required' : 'nullable') . '|date',
-            'gender' => ($isFieldRequired('gender') ? 'required' : 'nullable') . '|in:male,female',
+            'gender' => [$isFieldRequired('gender') ? 'required' : 'nullable', 'string', Rule::in($allowedOptionCodes('gender', $candidate->gender))],
             'ktp_number' => ($isFieldRequired('ktp_number') ? 'required' : 'nullable') . '|string|digits:16',
             'mother_name' => ($isFieldRequired('mother_name') ? 'required' : 'nullable') . '|string|max:255',
             'address' => ($isFieldRequired('address') ? 'required' : 'nullable') . '|string',
-            'education_level' => ($isFieldRequired('education_level') ? 'required' : 'nullable') . '|string|max:255',
+            'education_level' => [$isFieldRequired('education_level') ? 'required' : 'nullable', 'string', Rule::in($allowedOptionCodes('education_level', $candidate->education_level))],
             'cv' => ($candidate->cv_path ? 'nullable' : 'required') . '|file|mimes:pdf|max:5120',
             'profile_photo' => ($candidate->profile_photo_path ? 'nullable' : 'required') . '|image|mimes:jpg,jpeg,png|max:2048',
 
             // Personal & Domicile
             'birth_place' => ($isFieldRequired('birth_place') ? 'required' : 'nullable') . '|string|max:255',
-            'religion' => ($isFieldRequired('religion') ? 'required' : 'nullable') . '|string|in:Islam,Kristen,Katolik,Hindu,Budha,Konghucu,Lainnya',
-            'blood_type' => ($isFieldRequired('blood_type') ? 'required' : 'nullable') . '|string|in:A,B,AB,O',
+            'religion' => [$isFieldRequired('religion') ? 'required' : 'nullable', 'string', Rule::in($allowedOptionCodes('religion', $candidate->religion))],
+            'blood_type' => [$isFieldRequired('blood_type') ? 'required' : 'nullable', 'string', Rule::in($allowedOptionCodes('blood_type', $candidate->blood_type))],
             'height' => ($isFieldRequired('height') ? 'required' : 'nullable') . '|integer|min:50|max:300',
             'weight' => ($isFieldRequired('weight') ? 'required' : 'nullable') . '|integer|min:10|max:500',
             'address_domicile' => ($isFieldRequired('address_domicile') ? 'required' : 'nullable') . '|string',
@@ -119,7 +126,7 @@ class ProfileController extends Controller
             'mother_job' => ($isFieldRequired('mother_job') ? 'required' : 'nullable') . '|string|max:255',
             'sibling_order' => ($isFieldRequired('sibling_order') ? 'required' : 'nullable') . '|integer|min:1',
             'sibling_count' => ($isFieldRequired('sibling_count') ? 'required' : 'nullable') . '|integer|min:1',
-            'marital_status' => ($isFieldRequired('marital_status') ? 'required' : 'nullable') . '|string|in:belum_nikah,nikah,duda,janda',
+            'marital_status' => [$isFieldRequired('marital_status') ? 'required' : 'nullable', 'string', Rule::in($allowedOptionCodes('marital_status', $candidate->marital_status))],
             'spouse_name' => ($isFieldRequired('spouse_name') ? 'required_if:marital_status,nikah' : 'nullable') . '|string|max:255',
             'spouse_birth_place_date' => ($isFieldRequired('spouse_birth_place_date') ? 'required_if:marital_status,nikah' : 'nullable') . '|string|max:255',
             'child_1_name' => 'nullable|string|max:255',
@@ -133,7 +140,7 @@ class ProfileController extends Controller
             'school_name_city' => ($isFieldRequired('school_name_city') ? 'required' : 'nullable') . '|string|max:255',
             'school_major' => ($isFieldRequired('school_major') ? 'required' : 'nullable') . '|string|max:255',
             'school_graduation_year' => ($isFieldRequired('school_graduation_year') ? 'required' : 'nullable') . '|integer|min:1900|max:2100',
-            'work_experience' => ($isFieldRequired('work_experience') ? 'required' : 'nullable') . '|array|max:4',
+            'work_experience' => ($isFieldRequired('work_experience') ? 'required' : 'nullable') . '|array',
             'work_experience.*.company' => 'required|string|max:255',
             'work_experience.*.position' => 'required|string|max:255',
             'work_experience.*.period' => 'required|string|max:255',
@@ -141,17 +148,26 @@ class ProfileController extends Controller
             'work_experience.*.resign_reason' => 'required|string|max:255',
 
             // References & Emergency Contacts
-            'reference_name' => ($isFieldRequired('reference_name') ? 'required' : 'nullable') . '|string|max:255',
-            'reference_relationship' => ($isFieldRequired('reference_relationship') ? 'required' : 'nullable') . '|string|max:255',
-            'reference_phone' => ($isFieldRequired('reference_phone') ? 'required' : 'nullable') . '|string|max:255',
-            'emergency_name' => ($isFieldRequired('emergency_name') ? 'required' : 'nullable') . '|string|max:255',
-            'emergency_relationship' => ($isFieldRequired('emergency_relationship') ? 'required' : 'nullable') . '|string|max:255',
-            'emergency_phone' => ($isFieldRequired('emergency_phone') ? 'required' : 'nullable') . '|string|max:255',
-            'emergency_address' => ($isFieldRequired('emergency_address') ? 'required' : 'nullable') . '|string',
+            'reference_name' => 'nullable|string|max:255',
+            'reference_relationship' => 'nullable|string|max:255',
+            'reference_phone' => 'nullable|string|max:255',
+            'emergency_name' => 'nullable|string|max:255',
+            'emergency_relationship' => 'nullable|string|max:255',
+            'emergency_phone' => 'nullable|string|max:255',
+            'emergency_address' => 'nullable|string',
+            'references' => 'nullable|array|max:3',
+            'references.*.name' => 'required|string|max:255',
+            'references.*.relationship' => 'required|string|max:255',
+            'references.*.phone' => 'required|string|max:255',
+            'emergency_contacts' => 'required|array|min:1|max:3',
+            'emergency_contacts.*.name' => 'required|string|max:255',
+            'emergency_contacts.*.relationship' => 'required|string|max:255',
+            'emergency_contacts.*.phone' => 'required|string|max:255',
+            'emergency_contacts.*.address' => 'required|string',
 
             // Sizes
             'size_shoe' => ($isFieldRequired('size_shoe') ? 'required' : 'nullable') . '|integer|min:10|max:60',
-            'size_uniform' => ($isFieldRequired('size_uniform') ? 'required' : 'nullable') . '|string|in:S,M,L,XL,XXL,XXXL',
+            'size_uniform' => [$isFieldRequired('size_uniform') ? 'required' : 'nullable', 'string', Rule::in($allowedOptionCodes('uniform_size', $candidate->size_uniform))],
         ];
 
         // 2. Custom Fields Validation
@@ -188,6 +204,11 @@ class ProfileController extends Controller
                 $fieldRule[] = 'string';
                 if (!empty($field->options)) {
                     $fieldRule[] = 'in:' . implode(',', $field->options);
+                }
+            } elseif ($field->field_type === 'checklist') {
+                $fieldRule[] = 'array';
+                if (!empty($field->options)) {
+                    $customRules[$inputName . '.*'] = [Rule::in($field->options)];
                 }
             }
 
@@ -238,13 +259,15 @@ class ProfileController extends Controller
             'school_major' => $request->school_major,
             'school_graduation_year' => $request->school_graduation_year,
             'work_experience' => $request->work_experience,
-            'reference_name' => $request->reference_name,
-            'reference_relationship' => $request->reference_relationship,
-            'reference_phone' => $request->reference_phone,
-            'emergency_name' => $request->emergency_name,
-            'emergency_relationship' => $request->emergency_relationship,
-            'emergency_phone' => $request->emergency_phone,
-            'emergency_address' => $request->emergency_address,
+            'reference_name' => $request->input('references.0.name'),
+            'reference_relationship' => $request->input('references.0.relationship'),
+            'reference_phone' => $request->input('references.0.phone'),
+            'emergency_name' => $request->input('emergency_contacts.0.name'),
+            'emergency_relationship' => $request->input('emergency_contacts.0.relationship'),
+            'emergency_phone' => $request->input('emergency_contacts.0.phone'),
+            'emergency_address' => $request->input('emergency_contacts.0.address'),
+            'references' => $request->references ?? [],
+            'emergency_contacts' => $request->emergency_contacts ?? [],
             'size_shoe' => $request->size_shoe,
             'size_uniform' => $request->size_uniform,
         ];
@@ -306,7 +329,9 @@ class ProfileController extends Controller
                 if ($request->has($inputName)) {
                     CandidateFieldValue::updateOrCreate(
                         ['candidate_id' => $candidate->id, 'profile_field_id' => $field->id],
-                        ['value' => $request->input($inputName)]
+                        ['value' => $field->field_type === 'checklist'
+                            ? json_encode($request->input($inputName, []))
+                            : $request->input($inputName)]
                     );
                 }
             }

@@ -36,7 +36,8 @@ class ProfileFieldController extends Controller
                 ]),
             ],
             'field_label' => 'required|string|max:255',
-            'field_type' => 'required|in:text,textarea,file,select',
+            'field_type' => 'required|in:text,textarea,file,select,checklist',
+            'form_section' => 'required|in:personal,family,education,references,custom',
             'is_required' => 'required|boolean',
             'options' => 'nullable|array',
             'options.*' => 'required|string|max:255',
@@ -48,8 +49,9 @@ class ProfileFieldController extends Controller
             'field_name' => $validated['field_name'],
             'field_label' => $validated['field_label'],
             'field_type' => $validated['field_type'],
+            'form_section' => $validated['form_section'],
             'is_required' => $validated['is_required'],
-            'options' => $validated['field_type'] === 'select' ? ($validated['options'] ?? []) : null,
+            'options' => in_array($validated['field_type'], ['select', 'checklist']) ? ($validated['options'] ?? []) : null,
             'sort_order' => $maxSort + 1,
             'is_active' => true,
         ]);
@@ -63,7 +65,8 @@ class ProfileFieldController extends Controller
 
         $validated = $request->validate([
             'field_label' => 'required|string|max:255',
-            'field_type' => 'required|in:text,textarea,file,select',
+            'field_type' => 'required|in:text,textarea,file,select,checklist',
+            'form_section' => 'required|in:personal,family,education,references,custom',
             'is_required' => 'required|boolean',
             'options' => 'nullable|array',
             'options.*' => 'required|string|max:255',
@@ -73,8 +76,9 @@ class ProfileFieldController extends Controller
         $field->update([
             'field_label' => $validated['field_label'],
             'field_type' => $validated['field_type'],
+            'form_section' => $validated['form_section'],
             'is_required' => $validated['is_required'],
-            'options' => $validated['field_type'] === 'select' ? ($validated['options'] ?? []) : null,
+            'options' => in_array($validated['field_type'], ['select', 'checklist']) ? ($validated['options'] ?? []) : null,
             'is_active' => $validated['is_active'],
         ]);
 

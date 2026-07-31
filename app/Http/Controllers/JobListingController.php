@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\JobCategory;
 use App\Models\JobListing;
+use App\Models\BusinessOption;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -62,6 +63,7 @@ class JobListingController extends Controller
             'categories' => $categories,
             'locations' => $locations,
             'filters' => $request->only(['search', 'category', 'contract_type', 'location']),
+            'contractTypes' => BusinessOption::active()->where('group', 'contract_type')->orderBy('sort_order')->get(),
         ]);
     }
 
@@ -89,6 +91,9 @@ class JobListingController extends Controller
         return Inertia::render('Public/JobDetail', [
             'job' => $job,
             'hasApplied' => $hasApplied,
+            'contractTypes' => BusinessOption::where('group', 'contract_type')
+                ->where(fn ($query) => $query->where('is_active', true)->orWhere('code', $job->contract_type))
+                ->orderBy('sort_order')->get(),
         ]);
     }
 
@@ -124,6 +129,7 @@ class JobListingController extends Controller
         return Inertia::render('Hr/JobListing/Create', [
             'categories' => $categories,
             'hrisProjects' => $hrisProjects,
+            'contractTypes' => BusinessOption::active()->where('group', 'contract_type')->orderBy('sort_order')->get(),
         ]);
     }
 
@@ -137,7 +143,7 @@ class JobListingController extends Controller
             'description' => 'required|string',
             'requirements' => 'required|string',
             'location' => 'required|string|max:255',
-            'contract_type' => 'required|in:pkwt,pkwtt,freelance',
+            'contract_type' => ['required', Rule::exists('business_options', 'code')->where(fn ($query) => $query->where('group', 'contract_type')->where('is_active', true))],
             'salary_range_min' => 'nullable|integer|min:0',
             'salary_range_max' => 'nullable|integer|min:0|gte:salary_range_min',
             'salary_visible' => 'required|boolean',
@@ -188,6 +194,9 @@ class JobListingController extends Controller
             'job' => $job,
             'categories' => $categories,
             'hrisProjects' => $hrisProjects,
+            'contractTypes' => BusinessOption::where('group', 'contract_type')
+                ->where(fn ($query) => $query->where('is_active', true)->orWhere('code', $job->contract_type))
+                ->orderBy('sort_order')->get(),
         ]);
     }
 
@@ -203,7 +212,7 @@ class JobListingController extends Controller
             'description' => 'required|string',
             'requirements' => 'required|string',
             'location' => 'required|string|max:255',
-            'contract_type' => 'required|in:pkwt,pkwtt,freelance',
+            'contract_type' => ['required', Rule::exists('business_options', 'code')->where(fn ($query) => $query->where('group', 'contract_type'))],
             'salary_range_min' => 'nullable|integer|min:0',
             'salary_range_max' => 'nullable|integer|min:0|gte:salary_range_min',
             'salary_visible' => 'required|boolean',

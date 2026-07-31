@@ -87,6 +87,7 @@ export default function HrLayout({ title, header, children }: PropsWithChildren<
     const adminLinks = [
         { href: '/hr/admin/users', icon: 'solar:users-group-rounded-linear', label: 'Manajemen HR', section: 'admin' },
         { href: '/hr/admin/categories', icon: 'solar:tag-linear', label: 'Kategori', section: 'admin' },
+        { href: '/hr/admin/options', icon: 'solar:list-check-linear', label: 'Opsi Pilihan', section: 'admin' },
         { href: '/hr/admin/config', icon: 'solar:settings-linear', label: 'Konfigurasi', section: 'admin' },
     ];
 

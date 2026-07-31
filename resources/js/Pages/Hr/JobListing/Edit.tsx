@@ -7,12 +7,13 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import Checkbox from '@/Components/Checkbox';
 import HrisProjectPicker, { HrisProject } from '@/Components/HrisProjectPicker';
-import { JobCategory, JobListing } from '@/types';
+import { BusinessOption, JobCategory, JobListing } from '@/types';
 
 interface Props {
     job: JobListing;
     categories: JobCategory[];
     hrisProjects?: HrisProject[];
+    contractTypes: BusinessOption[];
 }
 
 const optionalBiodataFields = [
@@ -44,7 +45,7 @@ const optionalBiodataFields = [
     { key: 'reference_phone', label: 'Telepon Referensi' },
 ];
 
-export default function Edit({ job, categories, hrisProjects = [] }: Props) {
+export default function Edit({ job, categories, hrisProjects = [], contractTypes }: Props) {
     // Format deadline date to YYYY-MM-DD for HTML5 date input
     const formatDeadline = (dateString?: string) => {
         if (!dateString) return '';
@@ -56,7 +57,7 @@ export default function Edit({ job, categories, hrisProjects = [] }: Props) {
         description: job.description || '',
         requirements: job.requirements || '',
         location: job.location || '',
-        contract_type: (job.contract_type || 'pkwt') as 'pkwt' | 'pkwtt' | 'freelance',
+        contract_type: job.contract_type || contractTypes[0]?.code || '',
         salary_range_min: job.salary_range_min ?? '',
         salary_range_max: job.salary_range_max ?? '',
         salary_visible: job.salary_visible || false,
@@ -144,12 +145,10 @@ export default function Edit({ job, categories, hrisProjects = [] }: Props) {
                                 <select
                                     id="contract_type"
                                     value={data.contract_type}
-                                    onChange={(e) => setData('contract_type', e.target.value as any)}
+                                    onChange={(e) => setData('contract_type', e.target.value)}
                                     className="mt-1 block w-full px-4 py-3 rounded-xl bg-white dark:bg-dark-surface/50 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                                 >
-                                    <option value="pkwt">PKWT (Kontrak)</option>
-                                    <option value="pkwtt">PKWTT (Karyawan Tetap)</option>
-                                    <option value="freelance">Freelance</option>
+                                    {contractTypes.map((option) => <option key={option.id} value={option.code}>{option.label}</option>)}
                                 </select>
                                 <InputError message={errors.contract_type} className="mt-2" />
                             </div>

@@ -133,6 +133,16 @@ class HrisApiService
             'work_experience' => $candidate->work_experience,
         ];
 
+        if (!empty($candidate->references)) {
+            $requestedFields[] = 'references';
+            $requestedData['references'] = $candidate->references;
+        }
+
+        if (!empty($candidate->emergency_contacts)) {
+            $requestedFields[] = 'emergency_contacts';
+            $requestedData['emergency_contacts'] = $candidate->emergency_contacts;
+        }
+
         // Format and append family members
         $familyMembers = [];
 

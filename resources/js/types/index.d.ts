@@ -6,7 +6,7 @@ export interface Candidate {
     name?: string;
     phone?: string;
     birth_date?: string;
-    gender?: 'male' | 'female';
+    gender?: string;
     ktp_number?: string;
     mother_name?: string;
     address?: string;
@@ -39,7 +39,7 @@ export interface Candidate {
     mother_job?: string;
     sibling_order?: number;
     sibling_count?: number;
-    marital_status?: 'belum_nikah' | 'nikah' | 'duda' | 'janda';
+    marital_status?: string;
     spouse_name?: string;
     spouse_birth_place_date?: string;
     child_1_name?: string;
@@ -80,7 +80,7 @@ export interface JobListing {
     description: string;
     requirements: string;
     location: string;
-    contract_type: 'pkwt' | 'pkwtt' | 'freelance';
+    contract_type: string;
     salary_range_min?: number;
     salary_range_max?: number;
     salary_visible: boolean;
@@ -95,6 +95,15 @@ export interface JobListing {
     required_fields?: string[];
     created_at: string;
     updated_at: string;
+}
+
+export interface BusinessOption {
+    id: number;
+    group: string;
+    code: string;
+    label: string;
+    sort_order: number;
+    is_active: boolean;
 }
 
 export interface JobCategory {
@@ -161,4 +170,5 @@ export type PageProps<T extends Record<string, unknown> = Record<string, unknown
     };
     ziggy: Config & { location: string };
     flash: FlashMessages;
+    businessOptions: Record<string, BusinessOption[]>;
 };

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\HrUser;
 use App\Models\JobCategory;
 use App\Models\CandidateProfileField;
+use App\Models\BusinessOption;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -39,6 +40,7 @@ class AdminTest extends TestCase
         $this->get(route('admin.users.index'))->assertRedirect(route('hr.login'));
         $this->get(route('admin.categories.index'))->assertRedirect(route('hr.login'));
         $this->get(route('admin.config.index'))->assertRedirect(route('hr.login'));
+        $this->get(route('admin.options.index'))->assertRedirect(route('hr.login'));
     }
 
     public function test_non_admin_hr_user_cannot_access_admin_routes()
@@ -48,6 +50,7 @@ class AdminTest extends TestCase
         $this->get(route('admin.users.index'))->assertStatus(403);
         $this->get(route('admin.categories.index'))->assertStatus(403);
         $this->get(route('admin.config.index'))->assertStatus(403);
+        $this->get(route('admin.options.index'))->assertStatus(403);
     }
 
     public function test_admin_can_access_admin_routes()
@@ -57,6 +60,7 @@ class AdminTest extends TestCase
         $this->get(route('admin.users.index'))->assertStatus(200);
         $this->get(route('admin.categories.index'))->assertStatus(200);
         $this->get(route('admin.config.index'))->assertStatus(200);
+        $this->get(route('admin.options.index'))->assertStatus(200);
     }
 
     public function test_admin_can_manage_hr_users()
@@ -143,6 +147,7 @@ class AdminTest extends TestCase
             'field_label' => 'Tinggi Badan',
             'field_name' => 'tinggi_badan',
             'field_type' => 'text',
+            'form_section' => 'personal',
             'is_required' => false,
         ]);
         $response->assertRedirect();
@@ -153,7 +158,8 @@ class AdminTest extends TestCase
         // Update
         $response = $this->put(route('admin.config.update', $field->id), [
             'field_label' => 'Tinggi Badan (cm)',
-            'field_type' => 'select',
+            'field_type' => 'checklist',
+            'form_section' => 'education',
             'is_required' => true,
             'options' => ['> 160 cm', '< 160 cm'],
             'is_active' => true,
@@ -162,7 +168,8 @@ class AdminTest extends TestCase
         
         $updated = CandidateProfileField::find($field->id);
         $this->assertEquals('Tinggi Badan (cm)', $updated->field_label);
-        $this->assertEquals('select', $updated->field_type);
+        $this->assertEquals('checklist', $updated->field_type);
+        $this->assertEquals('education', $updated->form_section);
         $this->assertTrue($updated->is_required);
         $this->assertEquals(['> 160 cm', '< 160 cm'], $updated->options);
 
@@ -202,5 +209,50 @@ class AdminTest extends TestCase
 
         $this->assertEquals(1, CandidateProfileField::find($field2->id)->sort_order);
         $this->assertEquals(2, CandidateProfileField::find($field1->id)->sort_order);
+    }
+
+    public function test_admin_can_manage_business_options()
+    {
+        $this->actingAs($this->admin, 'hr');
+
+        $this->post(route('admin.options.store'), [
+            'group' => 'contract_type',
+            'code' => 'internship',
+            'label' => 'Magang',
+        ])->assertRedirect();
+
+        $option = BusinessOption::where('group', 'contract_type')->where('code', 'internship')->firstOrFail();
+        $this->assertTrue($option->is_active);
+
+        $category = JobCategory::create(['name' => 'Internship', 'slug' => 'internship']);
+        $this->post(route('hr.lowongan.store'), [
+            'title' => 'Software Engineer Intern',
+            'description' => 'Program internship',
+            'requirements' => 'Mahasiswa tingkat akhir',
+            'location' => 'Jakarta',
+            'contract_type' => 'internship',
+            'salary_visible' => false,
+            'categories' => [$category->id],
+            'status' => 'draft',
+        ])->assertRedirect(route('hr.lowongan.index'));
+        $this->assertDatabaseHas('job_listings', ['contract_type' => 'internship']);
+
+        $this->put(route('admin.options.update', $option), [
+            'group' => 'contract_type',
+            'code' => 'internship',
+            'label' => 'Program Magang',
+            'is_active' => true,
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('business_options', [
+            'id' => $option->id,
+            'label' => 'Program Magang',
+        ]);
+
+        $this->delete(route('admin.options.destroy', $option))->assertRedirect();
+        $this->assertDatabaseHas('business_options', [
+            'id' => $option->id,
+            'is_active' => false,
+        ]);
     }
 }

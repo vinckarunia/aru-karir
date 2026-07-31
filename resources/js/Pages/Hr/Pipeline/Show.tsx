@@ -21,7 +21,7 @@ const stageLabels: Record<string, string> = {
 const stagesList = ['apply', 'screening', 'interview_hr', 'interview_client', 'offering', 'onboarding'];
 
 export default function PipelineShow({ application }: Props) {
-    const { flash } = usePage<PageProps>().props;
+    const { flash, businessOptions } = usePage<PageProps>().props;
 
     const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
@@ -173,7 +173,7 @@ export default function PipelineShow({ application }: Props) {
                                 { label: 'Nomor HP', value: candidate.phone || '-' },
                                 { label: 'Tempat Lahir', value: candidate.birth_place || '-' },
                                 { label: 'Tanggal Lahir', value: candidate.birth_date ? new Date(candidate.birth_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-' },
-                                { label: 'Jenis Kelamin', value: candidate.gender === 'male' ? 'Laki-laki' : candidate.gender === 'female' ? 'Perempuan' : '-' },
+                                { label: 'Jenis Kelamin', value: businessOptions.gender?.find((option) => option.code === candidate.gender)?.label || candidate.gender || '-' },
                                 { label: 'Agama', value: candidate.religion || '-' },
                                 { label: 'Golongan Darah', value: candidate.blood_type || '-' },
                                 { label: 'Tinggi Badan', value: candidate.height ? `${candidate.height} cm` : '-' },

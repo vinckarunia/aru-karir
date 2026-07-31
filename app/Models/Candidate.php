@@ -61,10 +61,12 @@ class Candidate extends Authenticatable
         'reference_name',
         'reference_relationship',
         'reference_phone',
+        'references',
         'emergency_name',
         'emergency_relationship',
         'emergency_phone',
         'emergency_address',
+        'emergency_contacts',
         'size_shoe',
         'size_uniform',
     ];
@@ -82,6 +84,8 @@ class Candidate extends Authenticatable
             'birth_date' => 'date',
             'password' => 'hashed',
             'work_experience' => 'array',
+            'references' => 'array',
+            'emergency_contacts' => 'array',
         ];
     }
 
