@@ -6,9 +6,13 @@
 
         <title inertia>{{ config('app.name', 'ARUKarir') }}</title>
 
-        <!-- Favicon with dark mode support -->
-        <link rel="icon" href="/favicon.ico" media="(prefers-color-scheme: light)">
-        <link rel="icon" href="/favicon-dark.ico" media="(prefers-color-scheme: dark)">
+        <!-- Favicon -->
+        <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <meta name="apple-mobile-web-app-title" content="ARU" />
+        <link rel="manifest" href="/site.webmanifest" />
 
         <!-- Iconify for Solar icon pack -->
         <script src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
