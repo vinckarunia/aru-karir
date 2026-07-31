@@ -224,24 +224,23 @@ export default function PipelineIndex({ job, applications }: Props) {
                                                             
                                                             <div className="flex items-center justify-between gap-2 mt-4 pt-2 border-t border-slate-100 dark:border-slate-800/40">
                                                                 <StatusBadge status={app.current_status} />
-                                                                <span className="text-[10px] text-slate-400">
-                                                                    {app.applied_at ? new Date(app.applied_at).toLocaleDateString('id-ID', {
-                                                                        day: 'numeric',
-                                                                        month: 'short'
-                                                                    }) : '-'}
-                                                                </span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-[10px] text-slate-400">
+                                                                        {app.applied_at ? new Date(app.applied_at).toLocaleDateString('id-ID', {
+                                                                            day: 'numeric',
+                                                                            month: 'short'
+                                                                        }) : '-'}
+                                                                    </span>
+                                                                    <Link
+                                                                        href={route('hr.pipeline.show', app.id)}
+                                                                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold text-primary hover:bg-primary/10 dark:text-primary-light dark:hover:bg-primary-light/10"
+                                                                    >
+                                                                        Profil
+                                                                        <iconify-icon icon="solar:arrow-right-linear" width="12"></iconify-icon>
+                                                                    </Link>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-
-                                                    {/* Hover Overlay Detail Link */}
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-white/95 to-white/80 dark:from-dark-surface/95 dark:to-dark-surface/85 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-xl flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-800">
-                                                        <Link
-                                                            href={route('hr.pipeline.show', app.id)}
-                                                            className="px-3.5 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark shadow-sm transition-all"
-                                                        >
-                                                            Lihat Profil
-                                                        </Link>
                                                     </div>
                                                 </div>
                                             );

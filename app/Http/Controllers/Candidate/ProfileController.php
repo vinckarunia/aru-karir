@@ -173,10 +173,13 @@ class ProfileController extends Controller
         // 2. Custom Fields Validation
         $customFields = CandidateProfileField::where('is_active', true)->get();
         $customRules = [];
+        $customAttributes = [];
 
         foreach ($customFields as $field) {
             $inputName = 'custom_' . $field->id;
             $fieldRule = [];
+            $customAttributes[$inputName] = $field->field_label;
+            $customAttributes[$inputName . '.*'] = $field->field_label;
 
             if ($field->is_required) {
                 if ($field->field_type === 'file') {
@@ -216,7 +219,7 @@ class ProfileController extends Controller
         }
 
         // Run validation
-        $validatedData = $request->validate(array_merge($rules, $customRules));
+        $validatedData = $request->validate(array_merge($rules, $customRules), [], $customAttributes);
 
         // 3. Save Standard Fields
         $candidateData = [

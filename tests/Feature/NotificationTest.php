@@ -125,6 +125,37 @@ class NotificationTest extends TestCase
         });
     }
 
+    public function test_note_can_be_added_when_current_stage_is_not_in_progress()
+    {
+        $application = Application::create([
+            'candidate_id' => $this->candidate->id,
+            'job_listing_id' => $this->jobListing->id,
+            'current_stage' => 'apply',
+            'current_status' => 'no_show',
+            'applied_at' => now(),
+        ]);
+
+        $stage = ApplicationStage::create([
+            'application_id' => $application->id,
+            'stage_name' => 'apply',
+            'status' => 'no_show',
+            'actioned_at' => now(),
+        ]);
+
+        $this->actingAs($this->hrUser, 'hr')
+            ->from(route('hr.pipeline.show', $application->id))
+            ->post(route('hr.pipeline.note', $application->id), [
+                'notes' => 'Kandidat akan dihubungi kembali.',
+            ])
+            ->assertRedirect(route('hr.pipeline.show', $application->id))
+            ->assertSessionHas('success', 'Catatan berhasil ditambahkan.');
+
+        $this->assertSame(
+            'Kandidat akan dihubungi kembali.',
+            $stage->fresh()->notes
+        );
+    }
+
     public function test_advancing_to_interview_triggers_interview_scheduled()
     {
         Notification::fake();
@@ -236,7 +267,7 @@ class NotificationTest extends TestCase
             'applied_at' => now(),
         ]);
 
-        ApplicationStage::create([
+        $stage = ApplicationStage::create([
             'application_id' => $application->id,
             'stage_name' => 'interview_hr',
             'status' => 'in_progress',
@@ -256,8 +287,11 @@ class NotificationTest extends TestCase
         Notification::assertSentTo($this->candidate, InterviewScheduled::class, function ($notification) {
             return $notification->stageName === 'interview_hr' && $notification->scheduleNotes === 'Rescheduled to 2 PM';
         });
+        $this->assertSame('rescheduled', $application->fresh()->current_status);
+        $this->assertSame('rescheduled', $stage->fresh()->status);
 
-        // Test no_show status update
+        // A second update must modify the same stage row even though it is no
+        // longer marked in_progress.
         $response = $this->post(route('hr.pipeline.status', $application->id), [
             'status' => 'no_show',
             'notes' => 'Candidate did not show up'
@@ -268,5 +302,16 @@ class NotificationTest extends TestCase
         Notification::assertSentTo($this->candidate, ApplicationStatusChanged::class, function ($notification) {
             return $notification->stageName === 'interview_hr' && $notification->status === 'no_show';
         });
+        $this->assertSame('no_show', $application->fresh()->current_status);
+        $this->assertSame('no_show', $stage->fresh()->status);
+
+        $this->post(route('hr.pipeline.status', $application->id), [
+            'status' => 'in_progress',
+            'notes' => 'Kandidat kembali diproses.',
+        ])->assertRedirect();
+
+        $this->assertSame('in_progress', $application->fresh()->current_status);
+        $this->assertSame('in_progress', $stage->fresh()->status);
+        $this->assertSame('Kandidat kembali diproses.', $stage->fresh()->notes);
     }
 }

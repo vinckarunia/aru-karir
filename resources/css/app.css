@@ -23,6 +23,28 @@
     --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
 }
 
+@layer base {
+    select {
+        color-scheme: light;
+    }
+
+    select option,
+    select optgroup {
+        background-color: #ffffff;
+        color: #0f172a;
+    }
+
+    .dark select {
+        color-scheme: dark;
+    }
+
+    .dark select option,
+    .dark select optgroup {
+        background-color: #1a0f1e;
+        color: #f5f0ff;
+    }
+}
+
 @layer utilities {
     /* Custom Scrollbar */
     ::-webkit-scrollbar {

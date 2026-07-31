@@ -64,7 +64,7 @@ const STAGES_METADATA: Record<StageName, StageInfo> = {
     screening: {
         key: 'screening',
         label: 'Seleksi Berkas (Screening)',
-        icon: 'solar:document-filter-bold-duotone',
+        icon: 'solar:document-text-bold-duotone',
         description: 'Tim rekrutmen sedang meninjau kesesuaian berkas, CV, dan profil Anda.',
     },
     interview_hr: {
@@ -95,6 +95,9 @@ const STAGES_METADATA: Record<StageName, StageInfo> = {
 
 export default function Show({ application }: Props) {
     const currentStageIndex = STAGE_ORDER.indexOf(application.current_stage);
+    const visibleStages = application.current_status === 'failed'
+        ? STAGE_ORDER.slice(0, currentStageIndex + 1)
+        : STAGE_ORDER;
 
     const getStageState = (stage: StageName): 'passed' | 'failed' | 'in_progress' | 'pending' | 'withdrawn' => {
         const stageIndex = STAGE_ORDER.indexOf(stage);
@@ -182,10 +185,18 @@ export default function Show({ application }: Props) {
 
                     {/* Vertical Timeline */}
                     <div className="relative border-l-2 border-slate-200 dark:border-slate-800/80 pl-6 sm:pl-8 ml-4 space-y-8">
-                        {STAGE_ORDER.map((stageName, idx) => {
+                        {visibleStages.map((stageName) => {
                             const meta = STAGES_METADATA[stageName];
                             const state = getStageState(stageName);
                             const historyRecords = application.stages.filter(s => s.stage_name === stageName);
+                            const meaningfulRecords = historyRecords.filter((record) => {
+                                if (record.rejection_reason) return true;
+                                const note = record.notes?.trim();
+                                return note && ![
+                                    'Lamaran dikirim oleh kandidat.',
+                                    'Diloloskan ke tahapan berikutnya.',
+                                ].includes(note);
+                            });
                             
                             // Determine style based on state
                             let iconBgColor = 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600';
@@ -256,23 +267,31 @@ export default function Show({ application }: Props) {
                                             {meta.description}
                                         </p>
 
-                                        {/* Historical Audit Notes / Logs */}
-                                        {historyRecords.length > 0 && (
-                                            <div className="mt-3 bg-slate-50 dark:bg-dark-surface/40 rounded-2xl p-4 border border-slate-100 dark:border-slate-800/80 space-y-3">
-                                                {historyRecords.map((record, rIdx) => (
-                                                    <div key={record.id} className={`text-xs ${rIdx > 0 ? 'border-t border-slate-100 dark:border-slate-800/50 pt-2.5 mt-2.5' : ''}`}>
-                                                        <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                                                            <span>Log Pembaharuan</span>
-                                                            <span>{record.actioned_at ? new Date(record.actioned_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}</span>
-                                                        </div>
-                                                        {record.notes && (
-                                                            <p className="text-slate-600 dark:text-slate-300 font-semibold mt-1 leading-normal whitespace-pre-line">
-                                                                {record.notes}
-                                                            </p>
+                                        {/* Show only meaningful recruiter notes, not internal audit logs. */}
+                                        {meaningfulRecords.length > 0 && (
+                                            <div className="mt-3 space-y-2">
+                                                {meaningfulRecords.map((record) => (
+                                                    <div key={record.id}>
+                                                        {record.notes && !record.rejection_reason && (
+                                                            <div className="flex items-start gap-2.5 rounded-xl bg-slate-50 px-3 py-2.5 text-xs text-slate-600 dark:bg-slate-800/40 dark:text-slate-300">
+                                                                <iconify-icon icon="solar:notes-linear" width="16" className="mt-0.5 shrink-0 text-slate-400"></iconify-icon>
+                                                                <div>
+                                                                    <p className="whitespace-pre-line font-medium leading-relaxed">{record.notes}</p>
+                                                                    {record.actioned_at && (
+                                                                        <p className="mt-1 text-[10px] text-slate-400">
+                                                                            {new Date(record.actioned_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                                        </p>
+                                                                    )}
+                                                                </div>
+                                                            </div>
                                                         )}
-                                                        {record.status === 'failed' && record.rejection_reason && (
-                                                            <div className="mt-2 text-red-600 dark:text-red-400 bg-red-50/50 dark:bg-red-950/10 p-2.5 rounded-xl border border-red-100 dark:border-red-900/20 font-bold">
-                                                                Alasan Gugur: {record.rejection_reason}
+                                                        {record.rejection_reason && (
+                                                            <div className="flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50/60 px-3 py-2.5 text-xs text-red-600 dark:border-red-900/30 dark:bg-red-950/10 dark:text-red-400">
+                                                                <iconify-icon icon="solar:danger-triangle-linear" width="16" className="mt-0.5 shrink-0"></iconify-icon>
+                                                                <div>
+                                                                    <p className="font-bold">Alasan proses dihentikan</p>
+                                                                    <p className="mt-0.5 whitespace-pre-line leading-relaxed">{record.rejection_reason}</p>
+                                                                </div>
                                                             </div>
                                                         )}
                                                     </div>

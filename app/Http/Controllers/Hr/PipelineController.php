@@ -200,16 +200,20 @@ class PipelineController extends Controller
                 'current_status' => $status,
             ]);
 
-            // Update current stage record
-            ApplicationStage::where('application_id', $application->id)
+            // Keep the stage history row in sync even when changing back from
+            // no_show/rescheduled/withdrawn to another status.
+            $stageRecord = ApplicationStage::where('application_id', $application->id)
                 ->where('stage_name', $application->current_stage)
-                ->where('status', 'in_progress')
-                ->update([
-                    'status' => $status,
-                    'notes' => $request->input('notes'),
-                    'actioned_by' => auth('hr')->id(),
-                    'actioned_at' => now(),
-                ]);
+                ->latest('created_at')
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $stageRecord->update([
+                'status' => $status,
+                'notes' => $request->input('notes'),
+                'actioned_by' => auth('hr')->id(),
+                'actioned_at' => now(),
+            ]);
         });
 
         $application->load(['candidate', 'jobListing']);
@@ -247,10 +251,11 @@ class PipelineController extends Controller
 
         $application = Application::findOrFail($applicationId);
 
-        // Find current stage record
+        // Notes may also be added while the current stage is rescheduled,
+        // no-show, passed, or otherwise no longer marked in progress.
         $stageRecord = ApplicationStage::where('application_id', $application->id)
             ->where('stage_name', $application->current_stage)
-            ->where('status', 'in_progress')
+            ->latest('created_at')
             ->firstOrFail();
 
         // Append to existing notes
